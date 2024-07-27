@@ -33,6 +33,7 @@ extern "C" {
 /* USER CODE BEGIN Includes */
 #include <stdbool.h>
 #include <stdio.h>
+#include "core_json.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
