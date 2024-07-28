@@ -28,9 +28,8 @@
 "oled_f103\oled_data.o"
 "oled_f103\mpu6050.o"
 "oled_f103\ws2812b.o"
-"oled_f103\core_json.o"
 "oled_f103\esp8266.o"
---strict --scatter "oled_F103\oled_F103.sct"
+--library_type=microlib --strict --scatter "oled_F103\oled_F103.sct"
 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers
 --list "oled_F103.map" -o oled_F103\oled_F103.axf

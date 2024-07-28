@@ -72,7 +72,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+	uint8_t res=0;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -102,7 +102,15 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   OLED_Init();
-  esp8266_init();
+  res=ESP8266_init(115200);
+	if(res==0)
+	{
+		printf("esp8266 init ok\r\n");
+	}
+	else
+	{
+		printf("esp8266 init fail\r\n");
+	}
   while (MPU6050_Init(&hi2c2) == 1)
   {
   };
