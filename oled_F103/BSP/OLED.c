@@ -65,7 +65,7 @@
 /*I2C超时时间*/
 #define OLED_I2C_TIMEOUT 100
 /*软件I2C用的延时时间，下面数值为170MHz主频要延时的值，如果你的主频不一样可以修改一下，100MHz以内的主频改成0就行*/
-#define Delay_time  3
+#define Delay_time  0
 
 /**
  * 数据存储格式：

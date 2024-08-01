@@ -2,30 +2,15 @@
 #include "usart.h"
 #include "OLED.h"
 
-/*********************ESP8266_UART2********************************* */
-static UART_HandleTypeDef g_uart_handle;
-static uint8_t g_uart_tx_buf[ESP8266_UART_TX_BUF_SIZE];
-static struct
-{
-    uint8_t buf[ESP8266_UART_RX_BUF_SIZE];
-    struct
-    {
-        uint16_t len    : 15;
-        uint16_t finsh  : 1;
-    } sta;
-} g_uart_rx_frame = {0};
 
-void ESP8266_uart_init(uint32_t baudrate)
+/*********************ESP8266_UART2********************************* */
+extern UART_HandleTypeDef huart2;
+ESP8266_UART_Buffer esp8266_uart_buff=
 {
-    g_uart_handle.Instance          = ESP8266_UART_INTERFACE;
-    g_uart_handle.Init.BaudRate     = baudrate;
-    g_uart_handle.Init.WordLength   = UART_WORDLENGTH_8B;
-    g_uart_handle.Init.StopBits     = UART_STOPBITS_1;
-    g_uart_handle.Init.Parity       = UART_PARITY_NONE;
-    g_uart_handle.Init.Mode         = UART_MODE_TX_RX;
-    g_uart_handle.Init.HwFlowCtl    = UART_HWCONTROL_NONE;
-    g_uart_handle.Init.OverSampling = UART_OVERSAMPLING_16;
-}
+    .receive_start=0,
+    .receive_count=0,
+    .receive_finish=0,
+};
 
 void ESP8266_uart_printf(char *fmt, ...)
 {
@@ -33,87 +18,76 @@ void ESP8266_uart_printf(char *fmt, ...)
     uint16_t len;
 
     va_start(ap, fmt);
-    vsprintf((char *)g_uart_tx_buf, fmt, ap);
+    vsprintf((char *)esp8266_uart_buff.send_buff, fmt, ap);
     va_end(ap);
 
-    len = strlen((const char *)g_uart_tx_buf);
-    HAL_UART_Transmit(&g_uart_handle, g_uart_tx_buf, len, HAL_MAX_DELAY);
+    len = strlen((const char *)esp8266_uart_buff.send_buff);
+    HAL_UART_Transmit(&huart2, esp8266_uart_buff.send_buff, len, HAL_MAX_DELAY);
 }
 
-void ESP8266_uart_rx_restart(void)
+void ESP8266_uart_rx_clear(uint16_t len)
 {
-    g_uart_rx_frame.sta.len     = 0;
-    g_uart_rx_frame.sta.finsh   = 0;
+    memset(esp8266_uart_buff.receive_buff, 0x00, len);
+    esp8266_uart_buff.receive_count = 0;
+    esp8266_uart_buff.receive_start = 0;
+    esp8266_uart_buff.receive_finish = 0;
 }
 
-uint8_t *ESP8266_uart_rx_get_frame(void)
+/*********************ESP8266 基本AT指令函数********************************* */
+
+uint8_t ESP8266_init(void)
 {
-    if (g_uart_rx_frame.sta.finsh == 1)
+    __HAL_UART_ENABLE_IT(&huart2, UART_IT_RXNE);
+
+    if (ESP8266_at_test() != ESP8266_EOK)
     {
-        g_uart_rx_frame.buf[g_uart_rx_frame.sta.len] = '\0';
-        return g_uart_rx_frame.buf;
+        return ESP8266_ERROR;
+    }
+
+    return ESP8266_EOK;
+}
+
+uint8_t ESP8266_send_at_cmd(unsigned char *cmd, unsigned char len, char *ack)
+{
+    unsigned char retval =0;
+    unsigned int count = 0;
+
+    HAL_UART_Transmit(&huart2, cmd, len, 1000);
+
+    while ((esp8266_uart_buff.receive_start == 0)&&(count<1000))
+    {
+        count++;
+        HAL_Delay(1);
+    }
+
+    if (count >= 1000)
+    {
+        retval = 1;
     }
     else
     {
-        return NULL;
-    }
-}
-
-uint16_t ESP8266_uart_rx_get_frame_len(void)
-{
-    if (g_uart_rx_frame.sta.finsh == 1)
-    {
-        return g_uart_rx_frame.sta.len;
-    }
-    else
-    {
-        return 0;
-    }
-}
-
-/*********************ESP8266********************************* */
-uint8_t ESP8266_send_at_cmd(char *cmd, char *ack, uint32_t timeout)
-{
-    uint8_t *ret = NULL;
-
-    ESP8266_uart_rx_restart();
-    ESP8266_uart_printf("%s\r\n", cmd);
-
-    if ((ack == NULL) || (timeout == 0))
-    {
-        return ESP8266_EOK;
-    }
-    else
-    {
-        while (timeout > 0)
+        do
         {
-            ret = ESP8266_uart_rx_get_frame();
-
-            if (ret != NULL)
-            {
-                if (strstr((const char *)ret, ack) != NULL)
-                {
-                    return ESP8266_EOK;
-                }
-                else
-                {
-                    ESP8266_uart_rx_restart();
-                }
-            }
-
-            timeout--;
+            esp8266_uart_buff.receive_finish++;
             HAL_Delay(1);
-        }
+        } while (esp8266_uart_buff.receive_finish < 500);
 
-        return ESP8266_ETIMEOUT;
+        retval = 2;
+
+        if (strstr((const char*)esp8266_uart_buff.receive_buff, ack))
+        {
+            retval = 0;
+        }
     }
+
+    ESP8266_uart_rx_clear(esp8266_uart_buff.receive_count);
+    return retval;
 }
 
 uint8_t ESP8266_sw_reset(void)
 {
     uint8_t ret;
-    printf("1\r\n");
-    ret = ESP8266_send_at_cmd("AT+RST", "OK", 500);
+    ret = ESP8266_send_at_cmd((uint8_t *)"AT+RST\r\n", strlen("AT+RST\r\n"), "OK");
 
     if (ret == ESP8266_EOK)
     {
@@ -132,8 +106,7 @@ uint8_t ESP8266_at_test(void)
 
     for (i = 0; i < 10; i++)
     {
-
-        ret = ESP8266_send_at_cmd("AT", "OK", 500);
+        ret = ESP8266_send_at_cmd((uint8_t *)"AT\r\n", strlen("AT\r\n"), "OK");
 
         if (ret == ESP8266_EOK)
         {
@@ -144,25 +117,10 @@ uint8_t ESP8266_at_test(void)
     return ESP8266_ERROR;
 }
 
-uint8_t ESP8266_init(uint32_t baudrate)
-{
-    ESP8266_uart_init(baudrate);
-    ESP8266_sw_reset();
-    HAL_Delay(3000);
-
-    if (ESP8266_at_test() != ESP8266_EOK)
-    {
-        return ESP8266_ERROR;
-    }
-
-    return ESP8266_EOK;
-}
-
 uint8_t ESP8266_restore(void)
 {
     uint8_t ret;
-
-    ret = ESP8266_send_at_cmd("AT+RESTORE", "ready", 3000);
+    ret = ESP8266_send_at_cmd((uint8_t *)"AT+RESTORE\r\n", strlen("ready\r\n"), "OK");
 
     if (ret == ESP8266_EOK)
     {
@@ -174,8 +132,6 @@ uint8_t ESP8266_restore(void)
     }
 }
 
-
-
 uint8_t ESP8266_set_mode(uint8_t mode)
 {
     uint8_t ret;
@@ -184,19 +140,19 @@ uint8_t ESP8266_set_mode(uint8_t mode)
     {
         case 1:
         {
-            ret = ESP8266_send_at_cmd("AT+CWMODE=1", "OK", 500);    /* Station模式 */
+            ret = ESP8266_send_at_cmd((uint8_t *)"AT+CWMODE=1\r\n", strlen("AT+CWMODE=1\r\n"), "OK");    /* Station模式 */
             break;
         }
 
         case 2:
         {
-            ret = ESP8266_send_at_cmd("AT+CWMODE=2", "OK", 500);    /* AP模式 */
+            ret = ESP8266_send_at_cmd((uint8_t *)"AT+CWMODE=2\r\n", strlen("AT+CWMODE=2\r\n"), "OK");    /* AP模式 */
             break;
         }
 
         case 3:
         {
-            ret = ESP8266_send_at_cmd("AT+CWMODE=3", "OK", 500);    /* AP+Station模式 */
+            ret = ESP8266_send_at_cmd((uint8_t *)"AT+CWMODE=3\r\n", strlen("AT+CWMODE=3\r\n"), "OK");    /* AP+Station模式 */
             break;
         }
 
@@ -224,13 +180,13 @@ uint8_t ESP8266_ate_config(uint8_t cfg)
     {
         case 0:
         {
-            ret = ESP8266_send_at_cmd("ATE0", "OK", 500);   /* 关闭回显 */
+            ret = ESP8266_send_at_cmd((uint8_t *)"ATE0\r\n", strlen("ATE0\r\n"), "OK");   /* 关闭回显 */
             break;
         }
 
         case 1:
         {
-            ret = ESP8266_send_at_cmd("ATE1", "OK", 500);   /* 打开回显 */
+            ret = ESP8266_send_at_cmd((uint8_t *)"ATE1\r\n", strlen("ATE1\r\n"), "OK");   /* 打开回显 */
             break;
         }
 
@@ -250,69 +206,31 @@ uint8_t ESP8266_ate_config(uint8_t cfg)
     }
 }
 
-uint8_t ESP8266_join_ap(char *ssid, char *pwd)
-{
-    uint8_t ret;
-    char cmd[64];
-
-    sprintf(cmd, "AT+CWJAP=\"%s\",\"%s\"", ssid, pwd);
-    ret = ESP8266_send_at_cmd(cmd, "WIFI GOT IP", 10000);
-
-    if (ret == ESP8266_EOK)
-    {
-        return ESP8266_EOK;
-    }
-    else
-    {
-        return ESP8266_ERROR;
-    }
-}
-
 uint8_t ESP8266_get_ip(char *buf)
 {
-    uint8_t ret;
+	uint8_t ret;
     char *p_start;
     char *p_end;
-
-    ret = ESP8266_send_at_cmd("AT+CIFSR", "OK", 500);
-
+    
+    ret =  ESP8266_send_at_cmd((uint8_t *)"AT+CIFSR\r\n",strlen("AT+CIFSR\r\n"),"OK");
     if (ret != ESP8266_EOK)
     {
         return ESP8266_ERROR;
     }
-
-    p_start = strstr((const char *)ESP8266_uart_rx_get_frame(), "\"");
+    
+    p_start = strstr((const char *)esp8266_uart_buff.receive_buff, "\"");
     p_end = strstr(p_start + 1, "\"");
     *p_end = '\0';
     sprintf(buf, "%s", p_start + 1);
     return ESP8266_EOK;
 }
 
-uint8_t ESP8266_connect_tcp_server(char *server_ip, char *server_port)
-{
-    uint8_t ret;
-    char cmd[64];
-
-    sprintf(cmd, "AT+CIPSTART=\"TCP\",\"%s\",%s", server_ip, server_port);
-    ret = ESP8266_send_at_cmd(cmd, "CONNECT", 5000);
-
-    if (ret == ESP8266_EOK)
-    {
-        return ESP8266_EOK;
-    }
-    else
-    {
-        return ESP8266_ERROR;
-    }
-}
-
 uint8_t ESP8266_enter_unvarnished(void)
 {
-    uint8_t ret;
-
-    ret  = ESP8266_send_at_cmd("AT+CIPMODE=1", "OK", 500);
-    ret += ESP8266_send_at_cmd("AT+CIPSEND", ">", 500);
-
+	 uint8_t ret;
+    
+    ret  =  ESP8266_send_at_cmd((uint8_t *)"AT+CIPMODE=1\r\n",strlen("AT+CIPMODE=1\r\n"), "OK");
+    ret += ESP8266_send_at_cmd((uint8_t *)"AT+CIPSEND\r\n",strlen("AT+CIPSEND\r\n"), ">");
     if (ret == ESP8266_EOK)
     {
         return ESP8266_EOK;
@@ -321,82 +239,206 @@ uint8_t ESP8266_enter_unvarnished(void)
     {
         return ESP8266_ERROR;
     }
-}
-
+}	
 void ESP8266_exit_unvarnished(void)
 {
-    ESP8266_uart_printf("+++");
+	ESP8266_uart_printf("+++");
 }
+/*********************ESP8266 链接WIFI&TCP服务函数**********************************/
 
-uint8_t ESP8266_connect_Ali_Clode(char *id, char *pwd)
+uint8_t ESP8266_join_wifi(void)
 {
-    uint8_t ret;
-    char cmd[64];
+    uint8_t retval =0;
+    uint16_t count = 0;
 
-    sprintf(cmd, "AT+ATKCLDSTA=\"%s\",\"%s\"", id, pwd);
-    ret = ESP8266_send_at_cmd(cmd, "CLOUD CONNECTED", 10000);
+    HAL_UART_Transmit(&huart2, (unsigned char *)"AT+CWJAP=\""WIFI_SSID"\",\""WIFI_PASSWD"\"\r\n", strlen("AT+CWJAP=\""WIFI_SSID"\",\""WIFI_PASSWD"\"\r\n"), 1000);
 
-    if (ret == ESP8266_EOK)
+    while ((esp8266_uart_buff.receive_start == 0)&&(count<1000))
     {
-        return ESP8266_EOK;
+        count++;
+        HAL_Delay(1);
+    }
+
+    if (count >= 1000)
+    {
+        retval = 1;
     }
     else
     {
-        return ESP8266_ERROR;
+        HAL_Delay(8000);
+
+        if (strstr((const char*)esp8266_uart_buff.receive_buff, "OK"))
+        {
+            retval = 0;
+        }
+        else
+        {
+            retval = 1;
+        }
     }
+
+    ESP8266_uart_rx_clear(esp8266_uart_buff.receive_count);
+    return retval;
 }
 
-uint8_t ESP8266_disconnect_Ali_Clode(void)
+uint8_t ESP8266_connect_tcp_server(void)
 {
-    uint8_t ret;
+    uint8_t retval=0;
+    uint16_t count = 0;
 
-    ret = ESP8266_send_at_cmd("AT+ATKCLDCLS", "CLOUD DISCONNECT", 500);
+    HAL_UART_Transmit(&huart2, (unsigned char *)"AT+MQTTCONN=0,\""BROKER_ASDDRESS"\",1883,0\r\n", strlen("AT+MQTTCONN=0,\""BROKER_ASDDRESS"\",1883,0\r\n"), 1000);
 
-    if (ret == ESP8266_EOK)
+    while ((esp8266_uart_buff.receive_start == 0)&&(count<1000))
     {
-        return ESP8266_EOK;
+        count++;
+        HAL_Delay(1);
+    }
+
+    if (count >= 1000)
+    {
+        retval = 1;
     }
     else
     {
-        return ESP8266_ERROR;
+        HAL_Delay(5000);
+
+        if (strstr((const char*)esp8266_uart_buff.receive_buff, "OK"))
+        {
+            retval = 0;
+        }
+        else
+        {
+            retval = 1;
+        }
     }
+
+    ESP8266_uart_rx_clear(esp8266_uart_buff.receive_count);
+    return retval;
 }
 
-/*********************ESP8266_UARTCALLBACK********************************* */
-void ESP8266_usart2Hander(void)
+uint8_t esp8266_send_msg(void)
 {
-    uint8_t tmp;
+    uint8_t retval =0;
+    uint16_t count = 0;
+    static uint8_t error_count=0;
+    unsigned char msg_buf[256];
 
-    if (__HAL_UART_GET_FLAG(&g_uart_handle, UART_FLAG_ORE) != RESET)        /* UART接收过载错误中断 */
+    HAL_UART_Transmit(&huart2, (unsigned char *)msg_buf, strlen((const char *)msg_buf), 1000);
+    HAL_UART_Transmit(&huart1, (unsigned char *)msg_buf, strlen((const char *)msg_buf), 1000);
+
+    while ((esp8266_uart_buff.receive_start == 0)&&(count<500))
     {
-        __HAL_UART_CLEAR_OREFLAG(&g_uart_handle);                           /* 清除接收过载错误中断标志 */
-        (void)g_uart_handle.Instance->SR;                                   /* 先读SR寄存器，再读DR寄存器 */
-        (void)g_uart_handle.Instance->DR;
+        count++;
+        HAL_Delay(1);
     }
 
-    if (__HAL_UART_GET_FLAG(&g_uart_handle, UART_FLAG_RXNE) != RESET)       /* UART接收中断 */
+    if (count >= 500)
     {
-        HAL_UART_Receive(&g_uart_handle, &tmp, 1, HAL_MAX_DELAY);           /* UART接收数据 */
+        retval = 1;
+    }
+    else
+    {
+        HAL_Delay(50);
 
-        if (g_uart_rx_frame.sta.len < (ESP8266_UART_RX_BUF_SIZE - 1))   /* 判断UART接收缓冲是否溢出
-                                                                             * 留出一位给结束符'\0'
-                                                                             */
+        if (strstr((const char*)esp8266_uart_buff.receive_buff, "OK"))
         {
-            g_uart_rx_frame.buf[g_uart_rx_frame.sta.len] = tmp;             /* 将接收到的数据写入缓冲 */
-            g_uart_rx_frame.sta.len++;                                      /* 更新接收到的数据长度 */
+            retval = 0;
+            error_count=0;
         }
-        else                                                                /* UART接收缓冲溢出 */
+        else
         {
-            g_uart_rx_frame.sta.len = 0;                                    /* 覆盖之前收到的数据 */
-            g_uart_rx_frame.buf[g_uart_rx_frame.sta.len] = tmp;             /* 将接收到的数据写入缓冲 */
-            g_uart_rx_frame.sta.len++;                                      /* 更新接收到的数据长度 */
+            error_count++;
+
+            if (error_count==5)
+            {
+                error_count=0;
+                printf("RECONNECT MQTT BROKER!!!\r\n");
+                ESP8266_init();
+            }
         }
     }
 
-    if (__HAL_UART_GET_FLAG(&g_uart_handle, UART_FLAG_IDLE) != RESET)       /* UART总线空闲中断 */
-    {
-        g_uart_rx_frame.sta.finsh = 1;                                      /* 标记帧接收完成 */
+    ESP8266_uart_rx_clear(esp8266_uart_buff.receive_count);
+    return retval;
+}
+/**
+  * @brief          esp8266接收数据
+  * @param[in]      none
+  * @retval         返回0接收数据正常,返回1接收数据异常或无数据
+  */
+uint8_t esp8266_receive_msg(void)
+{
+    uint8_t retval =0;
+    int msg_len=0;
+    uint8_t msg_body[128] = {0};
 
-        __HAL_UART_CLEAR_IDLEFLAG(&g_uart_handle);                          /* 清除UART总线空闲中断 */
+    if (esp8266_uart_buff.receive_start == 1)
+    {
+        do
+        {
+            esp8266_uart_buff.receive_finish++;
+            HAL_Delay(1);
+        } while (esp8266_uart_buff.receive_finish < 5);
+
+        if (strstr((const char*)esp8266_uart_buff.receive_buff, "+MQTTSUBRECV:"))
+        {
+            sscanf((const char *)esp8266_uart_buff.receive_buff, "+MQTTSUBRECV:0,\""SUB_TOPIC"\",%d,%s", &msg_len, msg_body);
+            printf("len:%d,msg:%s\r\n", msg_len, msg_body);
+
+            if (strlen((const char*)msg_body)== msg_len)
+            {
+                retval = parse_json_msg(msg_body, msg_len);
+            }
+            else
+            {
+                retval = 1;
+            }
+        }
+        else
+        {
+            retval = 1;
+        }
     }
+    else
+    {
+        retval = 1;
+    }
+
+    ESP8266_uart_rx_clear(esp8266_uart_buff.receive_count);
+    return retval;
+}
+
+uint8_t parse_json_msg(uint8_t *json_msg, uint8_t json_len)
+{
+    uint8_t retval =0;
+    JSONStatus_t result;
+    char query[] = "params.light";
+    size_t queryLength = sizeof(query) - 1;
+    char * value;
+    size_t valueLength;
+    result = JSON_Validate((const char *)json_msg, json_len);
+
+    if (result == JSONSuccess)
+    {
+        result = JSON_Search((char *)json_msg, json_len, query, queryLength, &value, &valueLength);
+
+        if (result == JSONSuccess)
+        {
+            char save = value[valueLength];
+            value[valueLength] = '\0';
+            printf("Found: %s %d-> %s\n", query, valueLength, value);
+            value[valueLength] = save;
+            retval = 0;
+        }
+        else
+        {
+            retval = 1;
+        }
+    }
+    else
+    {
+        retval = 1;
+    }
+
+    return retval;
 }
