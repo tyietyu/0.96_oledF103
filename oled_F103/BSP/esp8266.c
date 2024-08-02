@@ -286,8 +286,8 @@ uint8_t ESP8266_config_mqtt(void)
     uint8_t retval =0;
     uint16_t count = 0;
 
-    HAL_UART_Transmit(&huart2, (unsigned char *)"AT+MQTTUSERCFG=0,1,\"NULL\",\""MQTT_USER_NAME"\",\""MQTT_PASSWD"\",0,0,\"\"\r\n",
-								strlen("AT+MQTTUSERCFG=0,1,\"NULL\",\""MQTT_USER_NAME"\",\""MQTT_PASSWD"\",0,0,\"\"\r\n"), 1000);
+    HAL_UART_Transmit(&huart2, (unsigned char *)"AT+MQTTUSERCFG=0,1,\"NULL""\",\""MQTT_USER_NAME"\",\""MQTT_PASSWD"\",0,0,\"\"\r\n",
+								strlen("AT+MQTTUSERCFG=0,1,\"NULL""\",\""MQTT_USER_NAME"\",\""MQTT_PASSWD"\",0,0,\"\"\r\n"), 1000);
 	
     while ((esp8266_uart_buff.receive_start == 0)&&(count<1000))
     {

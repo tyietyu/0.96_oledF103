@@ -8,8 +8,9 @@
 #define WIFI_PASSWD      "123456789l"
 
 #define MQTT_USER_NAME   "ESP_OTA&k1644sbngGw"
-#define MQTT_CLIENT_ID   "k1644sbngGw.ESP_OTA|securemode=2,signmethod=hmacsha256,timestamp=1722566727408|"   
-#define MQTT_PASSWD      "e9815d81263fad9446b287f48c2c9bb56a190af3ad0ad6d8fb7c55cbb6862527"
+#define MQTT_CLIENT_ID   "k1644sbngGw.ESP_OTA|securemode=2\",signmethod=hmacsha256\",timestamp=1722566727408|"   
+#define MQTT_PASSWD      "dc4911f11cdd1256cbdf0885fcc433c5f9b8de09b172e14214bf39a9b0907574"
+
 #define BROKER_ASDDRESS  "iot-06z00bopvq7ywq3.mqtt.iothub.aliyuncs.com"
 
 #define SUB_TOPIC        "/sys/k1644sbngGw/ESP_OTA/thing/service/property/set"
