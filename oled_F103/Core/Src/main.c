@@ -209,7 +209,7 @@ void ESP8266_demo(void)
     }
 
     printf("7.Get USER MQTT Client ID\r\n");
-    while (ESP8266_get_mqttid() != 0)
+    while (ESP8266_connect_Aliyun() != 0)
     {
         HAL_Delay(8000);
     }

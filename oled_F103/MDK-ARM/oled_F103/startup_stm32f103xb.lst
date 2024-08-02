@@ -461,11 +461,11 @@ ARM Macro Assembler    Page 8
 
 Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M3 --apcs=interw
 ork --depend=oled_f103\startup_stm32f103xb.d -ooled_f103\startup_stm32f103xb.o 
--I.\RTE\_oled_F103 -ID:\Program\Keil\ARM\CMSIS\6.0.0\CMSIS\Core\Include -ID:\Pr
-ogram\Keil\Keil\STM32F1xx_DFP\2.4.0\Device\Include --predefine="__MICROLIB SETA
- 1" --predefine="__UVISION_VERSION SETA 535" --predefine="_RTE_ SETA 1" --prede
-fine="STM32F10X_MD SETA 1" --predefine="_RTE_ SETA 1" --list=.\oled_f103\startu
-p_stm32f103xb.lst startup_stm32f103xb.s
+-I.\RTE\_oled_F103 -IC:\Keil\ARM\CMSIS\5.9.0\CMSIS\Core\Include -IC:\Keil\Keil\
+STM32F1xx_DFP\2.4.0\Device\Include --predefine="__MICROLIB SETA 1" --predefine=
+"__UVISION_VERSION SETA 535" --predefine="_RTE_ SETA 1" --predefine="STM32F10X_
+MD SETA 1" --predefine="_RTE_ SETA 1" --list=.\oled_f103\startup_stm32f103xb.ls
+t startup_stm32f103xb.s
 
 
 

@@ -316,7 +316,7 @@ uint8_t ESP8266_config_mqtt(void)
     ESP8266_uart_rx_clear(esp8266_uart_buff.receive_count);
     return retval;
 }
-uint8_t ESP8266_get_mqttid(void)
+uint8_t ESP8266_connect_Aliyun(void)
 {
 	uint8_t retval =0;
     uint16_t count = 0;
@@ -356,7 +356,7 @@ uint8_t ESP8266_connect_tcp_server(void)
     uint8_t retval=0;
     uint16_t count = 0;
 
-    HAL_UART_Transmit(&huart2, (unsigned char *)"AT+MQTTCONN=0,\""BROKER_ASDDRESS"\",1883,0\r\n", strlen("AT+MQTTCONN=0,\""BROKER_ASDDRESS"\",1883,0\r\n"), 1000);
+    HAL_UART_Transmit(&huart2, (unsigned char *)"AT+MQTTCONN=0,\""BROKER_ASDDRESS"\",1883,0\r\n", strlen("AT+MQTTCONN=0,\""BROKER_ASDDRESS"\",1883,1\r\n"), 1000);
 
     while ((esp8266_uart_buff.receive_start == 0)&&(count<1000))
     {
@@ -516,7 +516,7 @@ uint8_t parse_json_msg(uint8_t *json_msg, uint8_t json_len)
 uint8_t ESP8266_Topic_Aliyun_Theam(void)
 {
     uint8_t retval =0;
-    retval=ESP8266_send_at_cmd((uint8_t *)"AT+MQTTSUB=0,\""SUB_TOPIC"\",0\r\n",strlen("AT+MQTTSUB=0,\""SUB_TOPIC"\",0\r\n"),"OK");
+    retval=ESP8266_send_at_cmd((uint8_t *)"AT+MQTTSUB=0,\""SUB_TOPIC"\",1\r\n",strlen("AT+MQTTSUB=0,\""SUB_TOPIC"\",1\r\n"),"OK");
     return retval;
 }
 
