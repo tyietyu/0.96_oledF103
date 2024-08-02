@@ -720,6 +720,7 @@ void OLED_ShowString(uint8_t X, uint8_t Y, char *String, uint8_t FontSize)
         /*调用OLED_ShowChar函数，依次显示每个字符*/
         OLED_ShowChar(X + i * FontSize, Y, String[i], FontSize);
     }
+	OLED_Update();
 }
 
 /**

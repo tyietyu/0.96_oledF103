@@ -7,8 +7,8 @@
 #define WIFI_SSID        "XiaomiPro"
 #define WIFI_PASSWD      "123456789l"
 
-#define MQTT_CLIENT_ID   "k1644sbngGw.ESP_OTA|securemode=2,signmethod=hmacsha256,timestamp=1722496393399|"   
 #define MQTT_USER_NAME   "ESP_OTA&k1644sbngGw"
+#define MQTT_CLIENT_ID   "k1644sbngGw.ESP_OTA|securemode=2,signmethod=hmacsha256,timestamp=1722566727408|"   
 #define MQTT_PASSWD      "e9815d81263fad9446b287f48c2c9bb56a190af3ad0ad6d8fb7c55cbb6862527"
 #define BROKER_ASDDRESS  "iot-06z00bopvq7ywq3.mqtt.iothub.aliyuncs.com"
 
@@ -34,7 +34,7 @@ typedef struct {
 } ESP8266_UART_Buffer;
 
 extern ESP8266_UART_Buffer esp8266_uart_buff;
-void ESP8266_uart_init(void);      				/* ESP8266 UART初始化 */
+
 void ESP8266_uart_printf(char *fmt, ...);       
 void ESP8266_uart_rx_clear(uint16_t len);             /* ESP8266 UART重新开始接收数据 */
 
@@ -48,10 +48,13 @@ uint8_t ESP8266_sw_reset(void);                                         /* ESP82
 uint8_t ESP8266_ate_config(uint8_t cfg);                                /* ESP8266设置回显模式 */
 uint8_t ESP8266_join_wifi(void);                         				/* ESP8266连接WIFI */
 uint8_t ESP8266_get_ip(char *buf);                                      /* ESP8266获取IP地址 */
+uint8_t ESP8266_config_mqtt(void);                                      /*ESP8266配置用户MQTT*/
+uint8_t ESP8266_get_mqttid(void);
 uint8_t ESP8266_connect_tcp_server(void); 								/* ESP8266连接TCP服务器 */
 uint8_t ESP8266_enter_unvarnished(void);                                /* ESP8266进入透传 */
 void ESP8266_exit_unvarnished(void);                                    /* ESP8266退出透传 */
 uint8_t parse_json_msg(uint8_t *json_msg,uint8_t json_len); 
+uint8_t ESP8266_Topic_Aliyun_Theam(void);
 
 #endif
 

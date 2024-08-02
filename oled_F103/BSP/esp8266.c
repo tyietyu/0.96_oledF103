@@ -281,6 +281,76 @@ uint8_t ESP8266_join_wifi(void)
     return retval;
 }
 
+uint8_t ESP8266_config_mqtt(void)
+{
+    uint8_t retval =0;
+    uint16_t count = 0;
+
+    HAL_UART_Transmit(&huart2, (unsigned char *)"AT+MQTTUSERCFG=0,1,\"NULL\",\""MQTT_USER_NAME"\",\""MQTT_PASSWD"\",0,0,\"\"\r\n",
+								strlen("AT+MQTTUSERCFG=0,1,\"NULL\",\""MQTT_USER_NAME"\",\""MQTT_PASSWD"\",0,0,\"\"\r\n"), 1000);
+	
+    while ((esp8266_uart_buff.receive_start == 0)&&(count<1000))
+    {
+        count++;
+        HAL_Delay(1);
+    }
+
+    if (count >= 1000)
+    {
+        retval = 1;
+    }
+    else
+    {
+        HAL_Delay(5000);
+
+        if (strstr((const char*)esp8266_uart_buff.receive_buff, "OK"))
+        {
+            retval = 0;
+        }
+        else
+        {
+            retval = 1;
+        }
+    }
+
+    ESP8266_uart_rx_clear(esp8266_uart_buff.receive_count);
+    return retval;
+}
+uint8_t ESP8266_get_mqttid(void)
+{
+	uint8_t retval =0;
+    uint16_t count = 0;
+
+    HAL_UART_Transmit(&huart2, (unsigned char *)"AT+MQTTCLIENTID=0,\""MQTT_CLIENT_ID"\"\r\n",
+								strlen("AT+MQTTCLIENTID=0,\""MQTT_CLIENT_ID"\"\r\n"), 1000);
+	
+    while ((esp8266_uart_buff.receive_start == 0)&&(count<1000))
+    {
+        count++;
+        HAL_Delay(1);
+    }
+
+    if (count >= 1000)
+    {
+        retval = 1;
+    }
+    else
+    {
+        HAL_Delay(5000);
+
+        if (strstr((const char*)esp8266_uart_buff.receive_buff, "OK"))
+        {
+            retval = 0;
+        }
+        else
+        {
+            retval = 1;
+        }
+    }
+
+    ESP8266_uart_rx_clear(esp8266_uart_buff.receive_count);
+    return retval;
+}
 uint8_t ESP8266_connect_tcp_server(void)
 {
     uint8_t retval=0;
@@ -442,3 +512,13 @@ uint8_t parse_json_msg(uint8_t *json_msg, uint8_t json_len)
 
     return retval;
 }
+
+uint8_t ESP8266_Topic_Aliyun_Theam(void)
+{
+    uint8_t retval =0;
+    retval=ESP8266_send_at_cmd((uint8_t *)"AT+MQTTSUB=0,\""SUB_TOPIC"\",0\r\n",strlen("AT+MQTTSUB=0,\""SUB_TOPIC"\",0\r\n"),"OK");
+    return retval;
+}
+
+
+
