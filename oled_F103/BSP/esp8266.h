@@ -12,9 +12,9 @@
 #define MQTT_PASSWD      "35d93f05a230fb364ac51438ed45f67c42d0c0fd4a2f792298297d106afdbad3"
 #define BROKER_ASDDRESS  "k1644sbngGw.iot-as-mqtt.cn-shanghai.aliyuncs.com"
 
-#define SUB_TOPIC        "/sys/k1644sbngGw/ESP_OTA/thing/service/property/set"
-#define PUB_TOPIC        "/sys/k1644sbngGw/ESP_OTA/thing/event/property/post"
-#define JSON_FORMAT      "{\\\"params\\\":{\\\"temp\\\":%d\\,\\\"humi\\\":%d\\}\\,\\\"version\\\":\\\"1.0.0\\\"}"
+#define SUB_TOPIC        "/k1644sbngGw/AT_MQTT/user/get"
+#define PUB_TOPIC	       "/sys/k1644sbngGw/AT_MQTT/thing/event/property/post"
+#define JSON_FORMAT      "{\\\"params\\\":{\\\"esp8266_adc_data\\\":%d\\,\\\"LED\\\":%d\\}\\,\\\"version\\\":\\\"1.0.0\\\"}"
 
 /* 错误代码 */
 #define ESP8266_EOK         0   /* 没有错误 */
@@ -54,7 +54,8 @@ uint8_t ESP8266_connect_tcp_server(void); 								/* ESP8266连接TCP服务器 *
 uint8_t ESP8266_enter_unvarnished(void);                                /* ESP8266进入透传 */
 void ESP8266_exit_unvarnished(void);                                    /* ESP8266退出透传 */
 uint8_t parse_json_msg(uint8_t *json_msg,uint8_t json_len); 
-uint8_t ESP8266_Topic_Aliyun_Theam(void);
-
+uint8_t esp8266_send_msg(void);
+uint8_t esp8266_receive_msg(void);
+uint8_t ESP8266_Sub_Topic_Aliyun(void);
 #endif
 

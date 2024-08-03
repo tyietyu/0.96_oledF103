@@ -45,7 +45,12 @@
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
 char oled_buff[20] = {0};
-uint8_t Rxbuff=0;
+uint8_t Rxbuff = 0;
+
+extern uint8_t index_send_msg;
+extern uint16_t index_led;
+uint8_t led_status = 0;
+uint8_t led_vol = 0;
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -59,6 +64,7 @@ void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 void OLED_demo(void);
 void ESP8266_demo(void);
+void espTopic_pub_sub_demo(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -67,9 +73,9 @@ void ESP8266_demo(void);
 /* USER CODE END 0 */
 
 /**
-  * @brief  The application entry point.
-  * @retval int
-  */
+ * @brief  The application entry point.
+ * @retval int
+ */
 int main(void)
 {
 
@@ -106,8 +112,8 @@ int main(void)
     OLED_Init();
     ESP8266_init();
     ESP8266_demo();
-    //while (MPU6050_Init(&hi2c2) == 1) {};
-
+    time2_start();
+    // while (MPU6050_Init(&hi2c2) == 1) {};
 
     /* USER CODE END 2 */
 
@@ -118,7 +124,8 @@ int main(void)
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
-
+        espTopic_pub_sub_demo();
+        HAL_Delay(10000);
         //    RGB_Show();
         //    MPU6050_Read_All(&hi2c2, &MPU6050);
         //    sprintf(oled_buff, "%.2f", MPU6050.Temperature);
@@ -127,24 +134,23 @@ int main(void)
         //    OLED_Printf(1, 20, OLED_8X16, &oled_buff[10]);
         //    OLED_Update();
         //    HAL_Delay(100);
-
     }
 
     /* USER CODE END 3 */
 }
 
 /**
-  * @brief System Clock Configuration
-  * @retval None
-  */
+ * @brief System Clock Configuration
+ * @retval None
+ */
 void SystemClock_Config(void)
 {
     RCC_OscInitTypeDef RCC_OscInitStruct = {0};
     RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
     /** Initializes the RCC Oscillators according to the specified parameters
-    * in the RCC_OscInitTypeDef structure.
-    */
+     * in the RCC_OscInitTypeDef structure.
+     */
     RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
     RCC_OscInitStruct.HSEState = RCC_HSE_ON;
     RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
@@ -159,9 +165,8 @@ void SystemClock_Config(void)
     }
 
     /** Initializes the CPU, AHB and APB buses clocks
-    */
-    RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                                  |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+     */
+    RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
     RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
     RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
     RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
@@ -191,7 +196,7 @@ void ESP8266_demo(void)
     HAL_Delay(1000);
 
     printf("4.NO AUTO CONNECT WIFI\r\n");
-    while (ESP8266_send_at_cmd((uint8_t *)"AT+CWAUTOCONN=0\r\n", strlen("AT+CWAUTOCONN=0\r\n"), "OK")!=0)
+    while (ESP8266_send_at_cmd((uint8_t *)"AT+CWAUTOCONN=0\r\n", strlen("AT+CWAUTOCONN=0\r\n"), "OK") != 0)
     {
         HAL_Delay(1000);
     }
@@ -201,14 +206,14 @@ void ESP8266_demo(void)
     {
         HAL_Delay(8000);
     }
-	
+
     printf("6.MQTT USER CONFIG\r\n");
     while (ESP8266_config_mqtt() != 0)
     {
         HAL_Delay(8000);
     }
 
-    printf("7.Get USER MQTT Client ID\r\n");
+    printf("7.Connect AliyunCloude\r\n");
     while (ESP8266_connect_Aliyun() != 0)
     {
         HAL_Delay(8000);
@@ -219,18 +224,27 @@ void ESP8266_demo(void)
     {
         HAL_Delay(8000);
     }
-
-    printf("9.SUBSCRIBE TOPIC\r\n");
-    while (ESP8266_Topic_Aliyun_Theam()!=0)
-    {
-        HAL_Delay(2000);
-    }
-	
-    printf("10.ESP8266 INIT OK!!!\r\n");
-
+    printf(" 9. ESP8266 INIT OK!!!\r\n");
 }
 
-
+void espTopic_pub_sub_demo(void)
+{
+    led_status=0;
+    led_vol=5;
+		while(esp8266_send_msg()!=0)
+		{
+			HAL_Delay(5000);
+		}
+		HAL_Delay(1000);
+		while(ESP8266_Sub_Topic_Aliyun()!=0)
+		{
+			HAL_Delay(5000);
+		}
+		while(esp8266_receive_msg()!=0)
+		{
+			HAL_Delay(5000);
+		}
+}
 
 void OLED_demo(void)
 {
@@ -339,9 +353,9 @@ void OLED_demo(void)
 /* USER CODE END 4 */
 
 /**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
 void Error_Handler(void)
 {
     /* USER CODE BEGIN Error_Handler_Debug */
@@ -355,14 +369,14 @@ void Error_Handler(void)
     /* USER CODE END Error_Handler_Debug */
 }
 
-#ifdef  USE_FULL_ASSERT
+#ifdef USE_FULL_ASSERT
 /**
-  * @brief  Reports the name of the source file and the source line number
-  *         where the assert_param error has occurred.
-  * @param  file: pointer to the source file name
-  * @param  line: assert_param error line source number
-  * @retval None
-  */
+ * @brief  Reports the name of the source file and the source line number
+ *         where the assert_param error has occurred.
+ * @param  file: pointer to the source file name
+ * @param  line: assert_param error line source number
+ * @retval None
+ */
 void assert_failed(uint8_t *file, uint32_t line)
 {
     /* USER CODE BEGIN 6 */

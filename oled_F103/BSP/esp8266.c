@@ -2,6 +2,8 @@
 #include "usart.h"
 #include "OLED.h"
 
+extern uint8_t led_status ;
+extern uint8_t led_vol ;
 
 /*********************ESP8266_UART2********************************* */
 extern UART_HandleTypeDef huart2;
@@ -393,6 +395,7 @@ uint8_t esp8266_send_msg(void)
     static uint8_t error_count=0;
     unsigned char msg_buf[256];
 
+    sprintf((char *)msg_buf,"AT+MQTTPUB=0,\""PUB_TOPIC"\",\""JSON_FORMAT"\",1,0\r\n",led_vol,led_status);
     HAL_UART_Transmit(&huart2, (unsigned char *)msg_buf, strlen((const char *)msg_buf), 1000);
     HAL_UART_Transmit(&huart1, (unsigned char *)msg_buf, strlen((const char *)msg_buf), 1000);
 
@@ -513,12 +516,18 @@ uint8_t parse_json_msg(uint8_t *json_msg, uint8_t json_len)
     return retval;
 }
 
-uint8_t ESP8266_Topic_Aliyun_Theam(void)
+uint8_t ESP8266_Sub_Topic_Aliyun(void)
 {
     uint8_t retval =0;
     retval=ESP8266_send_at_cmd((uint8_t *)"AT+MQTTSUB=0,\""SUB_TOPIC"\",1\r\n",strlen("AT+MQTTSUB=0,\""SUB_TOPIC"\",1\r\n"),"OK");
     return retval;
 }
 
+uint8_t ESP8266_Pub_Topic_Aliyun(void)
+{
+    uint8_t retval =0;
+    retval=ESP8266_send_at_cmd((uint8_t *)"AT+MQTTPUB=0,\""PUB_TOPIC"\",1\r\n",strlen("AT+MQTPUB=0,\""PUB_TOPIC"\",1\r\n"),"OK");
+    return retval;
+}
 
 

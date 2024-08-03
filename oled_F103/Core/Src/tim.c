@@ -21,7 +21,9 @@
 #include "tim.h"
 
 /* USER CODE BEGIN 0 */
-
+static uint16_t index_10ms = 0;
+uint16_t index_led = 0;
+uint8_t index_send_msg = 0;
 /* USER CODE END 0 */
 
 TIM_HandleTypeDef htim1;
@@ -240,5 +242,25 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle)
 }
 
 /* USER CODE BEGIN 1 */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)	
+{
+	if (htim->Instance == htim2.Instance)
+	{
+		index_10ms++;	 
+    if(index_10ms%100==0)
+    {
+      index_led = 1;
+    }
+    if(index_10ms >= 500)	
+		{
+			index_send_msg=1;
+			index_10ms = 0;
+		}
+	}
+}
 
+void time2_start(void)
+{
+  HAL_TIM_Base_Start_IT(&htim2);	//打开定时器2中断
+}
 /* USER CODE END 1 */
