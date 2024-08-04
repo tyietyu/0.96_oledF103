@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "tim.h": "c",
-        "main.h": "c"
+        "main.h": "c",
+        "esp8266.h": "c"
     }
 }

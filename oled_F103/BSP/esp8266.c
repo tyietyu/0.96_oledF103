@@ -2,16 +2,16 @@
 #include "usart.h"
 #include "OLED.h"
 
-extern uint8_t led_status ;
-extern uint8_t led_vol ;
+extern uint8_t led_status;
+extern uint8_t led_vol;
 
 /*********************ESP8266_UART2********************************* */
 extern UART_HandleTypeDef huart2;
-ESP8266_UART_Buffer esp8266_uart_buff=
-{
-    .receive_start=0,
-    .receive_count=0,
-    .receive_finish=0,
+ESP8266_UART_Buffer esp8266_uart_buff =
+    {
+        .receive_start = 0,
+        .receive_count = 0,
+        .receive_finish = 0,
 };
 
 void ESP8266_uart_printf(char *fmt, ...)
@@ -51,12 +51,12 @@ uint8_t ESP8266_init(void)
 
 uint8_t ESP8266_send_at_cmd(unsigned char *cmd, unsigned char len, char *ack)
 {
-    unsigned char retval =0;
+    unsigned char retval = 0;
     unsigned int count = 0;
 
     HAL_UART_Transmit(&huart2, cmd, len, 1000);
 
-    while ((esp8266_uart_buff.receive_start == 0)&&(count<1000))
+    while ((esp8266_uart_buff.receive_start == 0) && (count < 1000))
     {
         count++;
         HAL_Delay(1);
@@ -76,7 +76,7 @@ uint8_t ESP8266_send_at_cmd(unsigned char *cmd, unsigned char len, char *ack)
 
         retval = 2;
 
-        if (strstr((const char*)esp8266_uart_buff.receive_buff, ack))
+        if (strstr((const char *)esp8266_uart_buff.receive_buff, ack))
         {
             retval = 0;
         }
@@ -140,28 +140,28 @@ uint8_t ESP8266_set_mode(uint8_t mode)
 
     switch (mode)
     {
-        case 1:
-        {
-            ret = ESP8266_send_at_cmd((uint8_t *)"AT+CWMODE=1\r\n", strlen("AT+CWMODE=1\r\n"), "OK");    /* Station模式 */
-            break;
-        }
+    case 1:
+    {
+        ret = ESP8266_send_at_cmd((uint8_t *)"AT+CWMODE=1\r\n", strlen("AT+CWMODE=1\r\n"), "OK"); /* Station模式 */
+        break;
+    }
 
-        case 2:
-        {
-            ret = ESP8266_send_at_cmd((uint8_t *)"AT+CWMODE=2\r\n", strlen("AT+CWMODE=2\r\n"), "OK");    /* AP模式 */
-            break;
-        }
+    case 2:
+    {
+        ret = ESP8266_send_at_cmd((uint8_t *)"AT+CWMODE=2\r\n", strlen("AT+CWMODE=2\r\n"), "OK"); /* AP模式 */
+        break;
+    }
 
-        case 3:
-        {
-            ret = ESP8266_send_at_cmd((uint8_t *)"AT+CWMODE=3\r\n", strlen("AT+CWMODE=3\r\n"), "OK");    /* AP+Station模式 */
-            break;
-        }
+    case 3:
+    {
+        ret = ESP8266_send_at_cmd((uint8_t *)"AT+CWMODE=3\r\n", strlen("AT+CWMODE=3\r\n"), "OK"); /* AP+Station模式 */
+        break;
+    }
 
-        default:
-        {
-            return ESP8266_EINVAL;
-        }
+    default:
+    {
+        return ESP8266_EINVAL;
+    }
     }
 
     if (ret == ESP8266_EOK)
@@ -180,22 +180,22 @@ uint8_t ESP8266_ate_config(uint8_t cfg)
 
     switch (cfg)
     {
-        case 0:
-        {
-            ret = ESP8266_send_at_cmd((uint8_t *)"ATE0\r\n", strlen("ATE0\r\n"), "OK");   /* 关闭回显 */
-            break;
-        }
+    case 0:
+    {
+        ret = ESP8266_send_at_cmd((uint8_t *)"ATE0\r\n", strlen("ATE0\r\n"), "OK"); /* 关闭回显 */
+        break;
+    }
 
-        case 1:
-        {
-            ret = ESP8266_send_at_cmd((uint8_t *)"ATE1\r\n", strlen("ATE1\r\n"), "OK");   /* 打开回显 */
-            break;
-        }
+    case 1:
+    {
+        ret = ESP8266_send_at_cmd((uint8_t *)"ATE1\r\n", strlen("ATE1\r\n"), "OK"); /* 打开回显 */
+        break;
+    }
 
-        default:
-        {
-            return ESP8266_EINVAL;
-        }
+    default:
+    {
+        return ESP8266_EINVAL;
+    }
     }
 
     if (ret == ESP8266_EOK)
@@ -210,16 +210,16 @@ uint8_t ESP8266_ate_config(uint8_t cfg)
 
 uint8_t ESP8266_get_ip(char *buf)
 {
-	uint8_t ret;
+    uint8_t ret;
     char *p_start;
     char *p_end;
-    
-    ret =  ESP8266_send_at_cmd((uint8_t *)"AT+CIFSR\r\n",strlen("AT+CIFSR\r\n"),"OK");
+
+    ret = ESP8266_send_at_cmd((uint8_t *)"AT+CIFSR\r\n", strlen("AT+CIFSR\r\n"), "OK");
     if (ret != ESP8266_EOK)
     {
         return ESP8266_ERROR;
     }
-    
+
     p_start = strstr((const char *)esp8266_uart_buff.receive_buff, "\"");
     p_end = strstr(p_start + 1, "\"");
     *p_end = '\0';
@@ -229,10 +229,10 @@ uint8_t ESP8266_get_ip(char *buf)
 
 uint8_t ESP8266_enter_unvarnished(void)
 {
-	 uint8_t ret;
-    
-    ret  =  ESP8266_send_at_cmd((uint8_t *)"AT+CIPMODE=1\r\n",strlen("AT+CIPMODE=1\r\n"), "OK");
-    ret += ESP8266_send_at_cmd((uint8_t *)"AT+CIPSEND\r\n",strlen("AT+CIPSEND\r\n"), ">");
+    uint8_t ret;
+
+    ret = ESP8266_send_at_cmd((uint8_t *)"AT+CIPMODE=1\r\n", strlen("AT+CIPMODE=1\r\n"), "OK");
+    ret += ESP8266_send_at_cmd((uint8_t *)"AT+CIPSEND\r\n", strlen("AT+CIPSEND\r\n"), ">");
     if (ret == ESP8266_EOK)
     {
         return ESP8266_EOK;
@@ -241,21 +241,21 @@ uint8_t ESP8266_enter_unvarnished(void)
     {
         return ESP8266_ERROR;
     }
-}	
+}
 void ESP8266_exit_unvarnished(void)
 {
-	ESP8266_uart_printf("+++");
+    ESP8266_uart_printf("+++");
 }
 /*********************ESP8266 链接WIFI&TCP服务函数**********************************/
 
 uint8_t ESP8266_join_wifi(void)
 {
-    uint8_t retval =0;
+    uint8_t retval = 0;
     uint16_t count = 0;
 
-    HAL_UART_Transmit(&huart2, (unsigned char *)"AT+CWJAP=\""WIFI_SSID"\",\""WIFI_PASSWD"\"\r\n", strlen("AT+CWJAP=\""WIFI_SSID"\",\""WIFI_PASSWD"\"\r\n"), 1000);
+    HAL_UART_Transmit(&huart2, (unsigned char *)"AT+CWJAP=\"" WIFI_SSID "\",\"" WIFI_PASSWD "\"\r\n", strlen("AT+CWJAP=\"" WIFI_SSID "\",\"" WIFI_PASSWD "\"\r\n"), 1000);
 
-    while ((esp8266_uart_buff.receive_start == 0)&&(count<1000))
+    while ((esp8266_uart_buff.receive_start == 0) && (count < 1000))
     {
         count++;
         HAL_Delay(1);
@@ -269,7 +269,7 @@ uint8_t ESP8266_join_wifi(void)
     {
         HAL_Delay(8000);
 
-        if (strstr((const char*)esp8266_uart_buff.receive_buff, "OK"))
+        if (strstr((const char *)esp8266_uart_buff.receive_buff, "OK"))
         {
             retval = 0;
         }
@@ -285,13 +285,16 @@ uint8_t ESP8266_join_wifi(void)
 
 uint8_t ESP8266_config_mqtt(void)
 {
-    uint8_t retval =0;
+    uint8_t retval = 0;
     uint16_t count = 0;
 
-    HAL_UART_Transmit(&huart2, (unsigned char *)"AT+MQTTUSERCFG=0,1,\"NULL""\",\""MQTT_USER_NAME"\",\""MQTT_PASSWD"\",0,0,\"\"\r\n",
-								strlen("AT+MQTTUSERCFG=0,1,\"NULL""\",\""MQTT_USER_NAME"\",\""MQTT_PASSWD"\",0,0,\"\"\r\n"), 1000);
-	
-    while ((esp8266_uart_buff.receive_start == 0)&&(count<1000))
+    HAL_UART_Transmit(&huart2, (unsigned char *)"AT+MQTTUSERCFG=0,1,\"NULL"
+                                                "\",\"" MQTT_USER_NAME "\",\"" MQTT_PASSWD "\",0,0,\"\"\r\n",
+                      strlen("AT+MQTTUSERCFG=0,1,\"NULL"
+                             "\",\"" MQTT_USER_NAME "\",\"" MQTT_PASSWD "\",0,0,\"\"\r\n"),
+                      1000);
+
+    while ((esp8266_uart_buff.receive_start == 0) && (count < 1000))
     {
         count++;
         HAL_Delay(1);
@@ -305,7 +308,7 @@ uint8_t ESP8266_config_mqtt(void)
     {
         HAL_Delay(5000);
 
-        if (strstr((const char*)esp8266_uart_buff.receive_buff, "OK"))
+        if (strstr((const char *)esp8266_uart_buff.receive_buff, "OK"))
         {
             retval = 0;
         }
@@ -320,13 +323,13 @@ uint8_t ESP8266_config_mqtt(void)
 }
 uint8_t ESP8266_connect_Aliyun(void)
 {
-	uint8_t retval =0;
+    uint8_t retval = 0;
     uint16_t count = 0;
 
-    HAL_UART_Transmit(&huart2, (unsigned char *)"AT+MQTTCLIENTID=0,\""MQTT_CLIENT_ID"\"\r\n",
-								strlen("AT+MQTTCLIENTID=0,\""MQTT_CLIENT_ID"\"\r\n"), 1000);
-	
-    while ((esp8266_uart_buff.receive_start == 0)&&(count<1000))
+    HAL_UART_Transmit(&huart2, (unsigned char *)"AT+MQTTCLIENTID=0,\"" MQTT_CLIENT_ID "\"\r\n",
+                      strlen("AT+MQTTCLIENTID=0,\"" MQTT_CLIENT_ID "\"\r\n"), 1000);
+
+    while ((esp8266_uart_buff.receive_start == 0) && (count < 1000))
     {
         count++;
         HAL_Delay(1);
@@ -340,7 +343,7 @@ uint8_t ESP8266_connect_Aliyun(void)
     {
         HAL_Delay(5000);
 
-        if (strstr((const char*)esp8266_uart_buff.receive_buff, "OK"))
+        if (strstr((const char *)esp8266_uart_buff.receive_buff, "OK"))
         {
             retval = 0;
         }
@@ -355,12 +358,12 @@ uint8_t ESP8266_connect_Aliyun(void)
 }
 uint8_t ESP8266_connect_tcp_server(void)
 {
-    uint8_t retval=0;
+    uint8_t retval = 0;
     uint16_t count = 0;
 
-    HAL_UART_Transmit(&huart2, (unsigned char *)"AT+MQTTCONN=0,\""BROKER_ASDDRESS"\",1883,0\r\n", strlen("AT+MQTTCONN=0,\""BROKER_ASDDRESS"\",1883,1\r\n"), 1000);
+    HAL_UART_Transmit(&huart2, (unsigned char *)"AT+MQTTCONN=0,\"" BROKER_ASDDRESS "\",1883,0\r\n", strlen("AT+MQTTCONN=0,\"" BROKER_ASDDRESS "\",1883,1\r\n"), 1000);
 
-    while ((esp8266_uart_buff.receive_start == 0)&&(count<1000))
+    while ((esp8266_uart_buff.receive_start == 0) && (count < 1000))
     {
         count++;
         HAL_Delay(1);
@@ -374,7 +377,7 @@ uint8_t ESP8266_connect_tcp_server(void)
     {
         HAL_Delay(5000);
 
-        if (strstr((const char*)esp8266_uart_buff.receive_buff, "OK"))
+        if (strstr((const char *)esp8266_uart_buff.receive_buff, "OK"))
         {
             retval = 0;
         }
@@ -390,16 +393,16 @@ uint8_t ESP8266_connect_tcp_server(void)
 
 uint8_t esp8266_send_msg(void)
 {
-    uint8_t retval =0;
+    uint8_t retval = 0;
     uint16_t count = 0;
-    static uint8_t error_count=0;
+    static uint8_t error_count = 0;
     unsigned char msg_buf[256];
 
-    sprintf((char *)msg_buf,"AT+MQTTPUB=0,\""PUB_TOPIC"\",\""JSON_FORMAT"\",1,0\r\n",led_vol,led_status);
+    sprintf((char *)msg_buf, "AT+MQTTPUB=0,\"" PUB_TOPIC "\",\"" JSON_FORMAT "\",1,0\r\n", led_vol, led_status);
     HAL_UART_Transmit(&huart2, (unsigned char *)msg_buf, strlen((const char *)msg_buf), 1000);
     HAL_UART_Transmit(&huart1, (unsigned char *)msg_buf, strlen((const char *)msg_buf), 1000);
 
-    while ((esp8266_uart_buff.receive_start == 0)&&(count<500))
+    while ((esp8266_uart_buff.receive_start == 0) && (count < 500))
     {
         count++;
         HAL_Delay(1);
@@ -413,18 +416,18 @@ uint8_t esp8266_send_msg(void)
     {
         HAL_Delay(50);
 
-        if (strstr((const char*)esp8266_uart_buff.receive_buff, "OK"))
+        if (strstr((const char *)esp8266_uart_buff.receive_buff, "OK"))
         {
             retval = 0;
-            error_count=0;
+            error_count = 0;
         }
         else
         {
             error_count++;
 
-            if (error_count==5)
+            if (error_count == 5)
             {
-                error_count=0;
+                error_count = 0;
                 printf("RECONNECT MQTT BROKER!!!\r\n");
                 ESP8266_init();
             }
@@ -435,14 +438,14 @@ uint8_t esp8266_send_msg(void)
     return retval;
 }
 /**
-  * @brief          esp8266接收数据
-  * @param[in]      none
-  * @retval         返回0接收数据正常,返回1接收数据异常或无数据
-  */
+ * @brief          esp8266接收数据
+ * @param[in]      none
+ * @retval         返回0接收数据正常,返回1接收数据异常或无数据
+ */
 uint8_t esp8266_receive_msg(void)
 {
-    uint8_t retval =0;
-    int msg_len=0;
+    uint8_t retval = 0;
+    int msg_len = 0;
     uint8_t msg_body[128] = {0};
 
     if (esp8266_uart_buff.receive_start == 1)
@@ -453,12 +456,12 @@ uint8_t esp8266_receive_msg(void)
             HAL_Delay(1);
         } while (esp8266_uart_buff.receive_finish < 5);
 
-        if (strstr((const char*)esp8266_uart_buff.receive_buff, "+MQTTSUBRECV:"))
+        if (strstr((const char *)esp8266_uart_buff.receive_buff, "+MQTTSUBRECV:"))
         {
-            sscanf((const char *)esp8266_uart_buff.receive_buff, "+MQTTSUBRECV:0,\""SUB_TOPIC"\",%d,%s", &msg_len, msg_body);
+            sscanf((const char *)esp8266_uart_buff.receive_buff, "+MQTTSUBRECV:0,\"" SUB_TOPIC "\",%d,%s", &msg_len, msg_body);
             printf("len:%d,msg:%s\r\n", msg_len, msg_body);
 
-            if (strlen((const char*)msg_body)== msg_len)
+            if (strlen((const char *)msg_body) == msg_len)
             {
                 retval = parse_json_msg(msg_body, msg_len);
             }
@@ -483,11 +486,11 @@ uint8_t esp8266_receive_msg(void)
 
 uint8_t parse_json_msg(uint8_t *json_msg, uint8_t json_len)
 {
-    uint8_t retval =0;
+    uint8_t retval = 0;
     JSONStatus_t result;
     char query[] = "params.light";
     size_t queryLength = sizeof(query) - 1;
-    char * value;
+    char *value;
     size_t valueLength;
     result = JSON_Validate((const char *)json_msg, json_len);
 
@@ -516,18 +519,38 @@ uint8_t parse_json_msg(uint8_t *json_msg, uint8_t json_len)
     return retval;
 }
 
-uint8_t ESP8266_Sub_Topic_Aliyun(void)
+uint8_t ESP8266_Sub_Pub_Topic_Aliyun(uint8_t subTopicMode)
 {
-    uint8_t retval =0;
-    retval=ESP8266_send_at_cmd((uint8_t *)"AT+MQTTSUB=0,\""SUB_TOPIC"\",1\r\n",strlen("AT+MQTTSUB=0,\""SUB_TOPIC"\",1\r\n"),"OK");
-    return retval;
-}
-
-uint8_t ESP8266_Pub_Topic_Aliyun(void)
-{
-    uint8_t retval =0;
-    retval=ESP8266_send_at_cmd((uint8_t *)"AT+MQTTPUB=0,\""PUB_TOPIC"\",1\r\n",strlen("AT+MQTPUB=0,\""PUB_TOPIC"\",1\r\n"),"OK");
-    return retval;
+    uint8_t retval = 0;
+    switch (subTopicMode)
+    {
+    case 0: // 获取Aliyun IoT平台下发的消息
+        retval = ESP8266_send_at_cmd((uint8_t *)"AT+MQTTSUB=0,\"" SUB_TOPIC "\",1\r\n", strlen("AT+MQTTSUB=0,\"" SUB_TOPIC "\",1\r\n"), "OK");
+        return retval;
+        break;
+    case 1: // 上报设备信息到Aliyun IoT平台
+        retval = ESP8266_send_at_cmd((uint8_t *)"AT+MQTTPUB=0,\"" PUB_TOPIC "\",1\r\n", strlen("AT+MQTPUB=0,\"" PUB_TOPIC "\",1\r\n"), "OK");
+        return retval;
+        break;
+    case 2: // 设备上报固件升级信息
+        retval = ESP8266_send_at_cmd((uint8_t *)"AT+MQTTPUB=0,\"" UPLOAD_INFORMATION_PUB "\",1\r\n", strlen("AT+MQTTPUB=0,\"" UPLOAD_INFORMATION_PUB "\",1\r\n"), "OK");
+        return retval;
+        break;
+    case 3: // 固件升级信息下行
+        retval = ESP8266_send_at_cmd((uint8_t *)"AT+MQTTSUB=0,\"" DOWNLOAD_INFORMATION_SUB "\",1\r\n", strlen("AT+MQTTSUB=0,\"" DOWNLOAD_INFORMATION_SUB "\",1\r\n"), "OK");
+        return retval;
+        break;
+    case 4: // 设备主动拉取固件升级信息
+        retval = ESP8266_send_at_cmd((uint8_t *)"AT+MQTTPUB=0,\""DEVICE_ACTIVELY_INFORMATION_PUB"\",1\r\n", strlen("AT+MQTTPUB=0,\"" DEVICE_ACTIVELY_INFORMATION_PUB "\",1\r\n"), "OK");
+        return retval;
+        break;
+    case 5: //设备上报固件升级进度
+        retval = ESP8266_send_at_cmd((uint8_t *)"AT+MQTTPUB=0,\""DEVICE_REPORTS_PROGRESS_PUB"\",1\r\n", strlen("AT+MQTTPUB=0,\"" DEVICE_REPORTS_PROGRESS_PUB"\",1\r\n"), "OK"); 
+        return retval;
+        break;
+    default:
+        break;
+    }
 }
 
 

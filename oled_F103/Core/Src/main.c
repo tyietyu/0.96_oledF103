@@ -30,6 +30,7 @@
 #include "mpu6050.h"
 #include "WS2812B.h"
 #include "esp8266.h"
+#include "IAP.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/

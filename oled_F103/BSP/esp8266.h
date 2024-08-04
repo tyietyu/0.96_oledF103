@@ -4,17 +4,33 @@
 #include "main.h"
 #include "core_json.h"
 
+/*需要链接的WIFI名称以及密码*/
 #define WIFI_SSID        "XiaomiPro"
 #define WIFI_PASSWD      "123456789l"
 
+/*ESP8266 设备信息*/
+#define ProductKey         "k1644sbngGw"
+#define DeviceName         "AT_MQTT"
+#define DeviceSecret       "1038f2eead281b6e90427a69d9cd532b"
+
+/*esp8266 MQTT 连接参数*/
 #define MQTT_USER_NAME   "AT_MQTT&k1644sbngGw"
 #define MQTT_CLIENT_ID   "k1644sbngGw.AT_MQTT|securemode=2\\,signmethod=hmacsha256\\,timestamp=1722604000001|"   
 #define MQTT_PASSWD      "35d93f05a230fb364ac51438ed45f67c42d0c0fd4a2f792298297d106afdbad3"
 #define BROKER_ASDDRESS  "k1644sbngGw.iot-as-mqtt.cn-shanghai.aliyuncs.com"
 
-#define SUB_TOPIC        "/k1644sbngGw/AT_MQTT/user/get"
-#define PUB_TOPIC	       "/sys/k1644sbngGw/AT_MQTT/thing/event/property/post"
-#define JSON_FORMAT      "{\\\"params\\\":{\\\"esp8266_adc_data\\\":%d\\,\\\"LED\\\":%d\\}\\,\\\"version\\\":\\\"1.0.0\\\"}"
+/*阿里云订阅&发布消息mqtt协议指令*/
+#define SUB_TOPIC               "/k1644sbngGw/AT_MQTT/user/get"
+#define PUB_TOPIC	            "/sys/k1644sbngGw/AT_MQTT/thing/event/property/post"
+#define JSON_FORMAT               "{\\\"params\\\":{\\\"esp8266_adc_data\\\":%d\\,\\\"LED\\\":%d\\}\\,\\\"version\\\":\\\"1.0.0\\\"}"
+#define JSON_FORMAT_FIRMWARE      "{\\\"id\\\":\\\"0011\\\",\\\"params\\\":{\\\"version\\\":\\\"1.0.0\\\"}}"
+
+/*阿里云OTA 升级 */
+#define UPLOAD_INFORMATION_PUB              "/ota/device/inform/k1644sbngGw/AT_MQTT"                       //设备上报固件升级信息
+#define DOWNLOAD_INFORMATION_SUB            "/ota/device/upgrade/k1644sbngGw/AT_MQTT"                      //固件升级信息下行
+#define DEVICE_ACTIVELY_INFORMATION_PUB     "/sys/k1644sbngGw/AT_MQTT/thing/ota/firmware/get"             //设备主动拉取固件升级信息
+#define DEVICE_REPORTS_PROGRESS_PUB         "/ota/device/progress/k1644sbngGw/AT_MQTT"                     //设备上报固件升级进度
+
 
 /* 错误代码 */
 #define ESP8266_EOK         0   /* 没有错误 */
@@ -56,6 +72,8 @@ void ESP8266_exit_unvarnished(void);                                    /* ESP82
 uint8_t parse_json_msg(uint8_t *json_msg,uint8_t json_len); 
 uint8_t esp8266_send_msg(void);
 uint8_t esp8266_receive_msg(void);
-uint8_t ESP8266_Sub_Topic_Aliyun(void);
+uint8_t ESP8266_Sub_Pub_Topic_Aliyun(uint8_t subTopicMode);           /* ESP8266订阅/发布主题 */
+
+
 #endif
 
