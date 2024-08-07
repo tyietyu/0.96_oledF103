@@ -40,7 +40,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+uint32_t BootStaFlag;  
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/

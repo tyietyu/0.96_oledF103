@@ -24,14 +24,15 @@
 #define PUB_TOPIC	            "/sys/k1644sbngGw/AT_MQTT/thing/event/property/post"
 #define JSON_FORMAT               "{\\\"params\\\":{\\\"esp8266_adc_data\\\":%d\\,\\\"LED\\\":%d\\}\\,\\\"version\\\":\\\"1.0.0\\\"}"
 #define JSON_FORMAT_FIRMWARE      "{\\\"id\\\":\\\"0011\\\",\\\"params\\\":{\\\"version\\\":\\\"1.0.0\\\"}}"
+#define DEVICE_ATTRIBUTES       "/sys/k1644sbngGw/AT_MQTT/thing/service/property/set"               //设备属性上报
 
 /*阿里云OTA 升级 */
 #define UPLOAD_INFORMATION_PUB              "/ota/device/inform/k1644sbngGw/AT_MQTT"                       //设备上报固件升级信息
 #define DOWNLOAD_INFORMATION_SUB            "/ota/device/upgrade/k1644sbngGw/AT_MQTT"                      //固件升级信息下行,物联网平台推送OTA升级包信息
 #define DEVICE_ACTIVELY_INFORMATION_PUB     "/sys/k1644sbngGw/AT_MQTT/thing/ota/firmware/get"             //设备主动拉取固件升级信息
 #define DEVICE_REPORTS_PROGRESS_PUB         "/ota/device/progress/k1644sbngGw/AT_MQTT"                     //设备上报固件升级进度
-
-
+#define DEVICE_DOWNLOAD_FILE                "/sys/k1644sbngGw/AT_MQTT/thing/file/download_reply" 
+#define DEVICE_DOWNLOAD_FILE_REPLY        "/sys/k1644sbngGw/AT_MQTT/thing/file/download"
 /* 错误代码 */
 #define ESP8266_EOK         0   /* 没有错误 */
 #define ESP8266_ERROR       1   /* 通用错误 */

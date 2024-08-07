@@ -3,63 +3,51 @@
 
 #include "main.h"
 
-#define FLASH_OTA_ADDR          0x08008000  //固件升级的FLASH地址
-#define APP1_FLASH_SIZE         0x400
-#define BOOTLOADER_START_ADDR   0x8000000  //BootLoader起始地址
-#define BOOTLOADER_SIZE         0x3C00  //BootLoader大小
-#define FIRMWARE_VERSION_STORE_ADDR  (BOOTLOADER_START_ADDR+BOOTLOADER_SIZE)   //存储固件信息的FLASH地址
-#define FIRMWARE_VERSION_SIZE   16 //存储固件信息的字节数
-#define FIRMWARE_SIZE         512  //固件大小
+#define PACK_BUFF_SIZE  512
+#define CMD_BUFF_SIZE   512
 
-typedef struct 
-{
-	uint32_t file_size;//文件大小
-	char md5sum[100];//服务器下发的md5
-	char url[512];//下载URL
-	char host[256];//OTA服务器域名
-	char http_request[512];//HTTP请求报文
-	int streamId;
-	int counter;//计数器
-	int num;
-	int downlen;
-	uint8_t  OTA_tempver[32];//临时存储的版本号
-}ota_info_t;
+#define  CONNECT_OK         0x00000001        //置位表明CONNECT报文成功
+#define  OTA_EVENT          0x00000002        //置位表明OTA事件发生  
+#define OTA_SET_FLAG        0xAABB1122        //OTA_flag对勾状态对应的数值，如果OTA_flag等于该值，说明需要OTA更新A区
 
-extern ota_info_t ota_info;
+typedef struct{
+	uint8_t   Pack_buff[PACK_BUFF_SIZE];     //报文数据缓冲区
+	uint16_t  MessageID;          //报文标识符变量
+	uint16_t  Fixed_len;          //报文固定报头长度
+	uint16_t  Variable_len;       //报文可变报头长度
+	uint16_t  Payload_len;        //报文负载长度
+	uint16_t  Remaining_len;      //报文剩余长度
+	uint8_t   CMD_buff[CMD_BUFF_SIZE];      //提取的数据缓冲区
+	int size;                     //OTA下载固件大小
+	int streamId;                 //OTA下载固件ID编号
+	int counter;                  //OTA下载总共下载次数
+	int num;                      //OTA下载当前次数
+	int downlen;                  //OTA下载当前次数下载量
+	uint8_t  OTA_tempver[32];     //OTA下载临时版本号缓冲区
+}MQTT_CB;
+
+typedef struct{          
+	uint32_t OTA_flag;                        //标志性的变量，等于OTA_SET_FLAG定义的值时，表明需要OTA更新A区
+	uint32_t Firelen[11];                     //W25Q64中不同块中程序固件的长度，0号成员固定对应W25Q64中编码0的块，用于OTA
+	uint8_t  OTA_ver[32];
+}OTA_InfoCB;  
+extern OTA_InfoCB  OTA_Info;      //外部变量声明
+extern MQTT_CB  Aliyun_mqtt;      //外部变量声明                            
+
+void processing_mqtt_data(uint8_t *data, uint16_t datalen);  //函数声明
+void OTA_Version(void);                           //函数声明
+void OTA_Download(int size, int offset);          //函数声明
+
+void MQTT_ConnectPack(void);                                  //函数声明
+void MQTT_SubcribPack(char *topic);                           //函数声明
+void MQTT_DealPublishData(uint8_t *data, uint16_t data_len);  //函数声明
+void MQTT_PublishDataQs0(char *topic, char *data);            //函数声明
+void MQTT_PublishDataQs1(char *topic, char *data);            //函数声明
 
 void OTA_Init(void);
-uint8_t  Pub_Device_Firmware(void);
-uint8_t Device_Get_OTA_Info(ota_info_t *ota_info);
-void Start_OTA_Update(ota_info_t *ota_info,char *check_md5);
-void Update_FirmwareToApp(ota_info_t *ota_info,char *check_md5);
-void Read_CurrentFirmwareVersion(char *current_version);
-void Write_CurrentFirmwareVersion(char *current_version);
 
 
 #endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#endif // __IAP_H
 
 
 
