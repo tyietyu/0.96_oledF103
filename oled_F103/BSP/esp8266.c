@@ -288,12 +288,8 @@ uint8_t ESP8266_config_mqtt(void)
     uint8_t retval = 0;
     uint16_t count = 0;
 
-    HAL_UART_Transmit(&huart2, (unsigned char *)"AT+MQTTUSERCFG=0,1,\"NULL"
-                                                "\",\"" MQTT_USER_NAME "\",\"" MQTT_PASSWD "\",0,0,\"\"\r\n",
-                      strlen("AT+MQTTUSERCFG=0,1,\"NULL"
-                             "\",\"" MQTT_USER_NAME "\",\"" MQTT_PASSWD "\",0,0,\"\"\r\n"),
-                      1000);
-
+    HAL_UART_Transmit(&huart2, (unsigned char *)"AT+MQTTUSERCFG=0,1,\"NULL""\",\"" MQTT_USER_NAME "\",\"" MQTT_PASSWD "\",0,0,\"\"\r\n",
+                      strlen("AT+MQTTUSERCFG=0,1,\"NULL""\",\"" MQTT_USER_NAME "\",\"" MQTT_PASSWD "\",0,0,\"\"\r\n"),1000);
     while ((esp8266_uart_buff.receive_start == 0) && (count < 1000))
     {
         count++;
@@ -321,7 +317,7 @@ uint8_t ESP8266_config_mqtt(void)
     ESP8266_uart_rx_clear(esp8266_uart_buff.receive_count);
     return retval;
 }
-uint8_t ESP8266_connect_Aliyun(void)
+uint8_t ESP8266_connect_mqtt(void)
 {
     uint8_t retval = 0;
     uint16_t count = 0;
@@ -389,6 +385,23 @@ uint8_t ESP8266_connect_tcp_server(void)
 
     ESP8266_uart_rx_clear(esp8266_uart_buff.receive_count);
     return retval;
+}
+
+uint8_t ESP8266_Connect_Aliyun(void)
+{
+    while(ESP8266_config_mqtt() != 0)
+    {
+        HAL_Delay(1000);
+    }
+    while(ESP8266_connect_mqtt() != 0)
+    {
+        HAL_Delay(1000);
+    }
+    while(ESP8266_connect_tcp_server() != 0)
+    {
+        HAL_Delay(1000);
+    }
+    return 0;
 }
 
 uint8_t esp8266_send_msg(void)
@@ -459,8 +472,7 @@ uint8_t esp8266_receive_msg(void)
         if (strstr((const char *)esp8266_uart_buff.receive_buff, "+MQTTSUBRECV:"))
         {
             sscanf((const char *)esp8266_uart_buff.receive_buff, "+MQTTSUBRECV:0,\"" SUB_TOPIC "\",%d,%s", &msg_len, msg_body);
-            printf("len:%d,msg:%s\r\n", msg_len, msg_body);
-
+            //printf("len:%d,msg:%s\r\n", msg_len, msg_body);
             if (strlen((const char *)msg_body) == msg_len)
             {
                 retval = parse_json_msg(msg_body, msg_len);
@@ -541,16 +553,14 @@ uint8_t ESP8266_Sub_Pub_Topic_Aliyun(uint8_t subTopicMode)
         return retval;
         break;
     case 4: // 设备主动拉取固件升级信息
-        retval = ESP8266_send_at_cmd((uint8_t *)"AT+MQTTPUB=0,\""DEVICE_ACTIVELY_INFORMATION_PUB"\",1\r\n", strlen("AT+MQTTPUB=0,\"" DEVICE_ACTIVELY_INFORMATION_PUB "\",1\r\n"), "OK");
+        retval = ESP8266_send_at_cmd((uint8_t *)"AT+MQTTPUB=0,\"" DEVICE_ACTIVELY_INFORMATION_PUB "\",1\r\n", strlen("AT+MQTTPUB=0,\"" DEVICE_ACTIVELY_INFORMATION_PUB "\",1\r\n"), "OK");
         return retval;
         break;
-    case 5: //设备上报固件升级进度
-        retval = ESP8266_send_at_cmd((uint8_t *)"AT+MQTTPUB=0,\""DEVICE_REPORTS_PROGRESS_PUB"\",1\r\n", strlen("AT+MQTTPUB=0,\"" DEVICE_REPORTS_PROGRESS_PUB"\",1\r\n"), "OK"); 
+    case 5: // 设备上报固件升级进度
+        retval = ESP8266_send_at_cmd((uint8_t *)"AT+MQTTPUB=0,\"" DEVICE_REPORTS_PROGRESS_PUB "\",1\r\n", strlen("AT+MQTTPUB=0,\"" DEVICE_REPORTS_PROGRESS_PUB "\",1\r\n"), "OK");
         return retval;
         break;
     default:
         break;
     }
 }
-
-

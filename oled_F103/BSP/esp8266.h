@@ -27,7 +27,7 @@
 
 /*阿里云OTA 升级 */
 #define UPLOAD_INFORMATION_PUB              "/ota/device/inform/k1644sbngGw/AT_MQTT"                       //设备上报固件升级信息
-#define DOWNLOAD_INFORMATION_SUB            "/ota/device/upgrade/k1644sbngGw/AT_MQTT"                      //固件升级信息下行
+#define DOWNLOAD_INFORMATION_SUB            "/ota/device/upgrade/k1644sbngGw/AT_MQTT"                      //固件升级信息下行,物联网平台推送OTA升级包信息
 #define DEVICE_ACTIVELY_INFORMATION_PUB     "/sys/k1644sbngGw/AT_MQTT/thing/ota/firmware/get"             //设备主动拉取固件升级信息
 #define DEVICE_REPORTS_PROGRESS_PUB         "/ota/device/progress/k1644sbngGw/AT_MQTT"                     //设备上报固件升级进度
 
@@ -65,8 +65,9 @@ uint8_t ESP8266_ate_config(uint8_t cfg);                                /* ESP82
 uint8_t ESP8266_join_wifi(void);                         				/* ESP8266连接WIFI */
 uint8_t ESP8266_get_ip(char *buf);                                      /* ESP8266获取IP地址 */
 uint8_t ESP8266_config_mqtt(void);                                      /*ESP8266配置用户MQTT*/
-uint8_t ESP8266_connect_Aliyun(void);
-uint8_t ESP8266_connect_tcp_server(void); 								/* ESP8266连接TCP服务器 */
+uint8_t ESP8266_connect_mqtt(void);                                    /* ESP8266连接MQTT */
+uint8_t ESP8266_connect_tcp_server(void); 								/* ESP8266连接TCP服务器地址 */
+uint8_t ESP8266_Connect_Aliyun(void);								    /* ESP8266连接阿里云 */
 uint8_t ESP8266_enter_unvarnished(void);                                /* ESP8266进入透传 */
 void ESP8266_exit_unvarnished(void);                                    /* ESP8266退出透传 */
 uint8_t parse_json_msg(uint8_t *json_msg,uint8_t json_len); 

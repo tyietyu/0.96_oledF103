@@ -2,6 +2,8 @@
     "files.associations": {
         "tim.h": "c",
         "main.h": "c",
-        "esp8266.h": "c"
+        "esp8266.h": "c",
+        "stm32f1xx_hal.h": "c",
+        "flash.h": "c"
     }
 }
