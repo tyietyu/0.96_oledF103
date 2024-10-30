@@ -14,7 +14,7 @@ void OTA_Init(void)
     ESP8266_ate_config(0);
     ESP8266_join_wifi();
     ESP8266_Connect_Aliyun();
-    ESP8266_Sub_Pub_Topic_Aliyun(0);
+    // ESP8266_Sub_Pub_Topic_Aliyun(0);
 }
 
 /*-------------------------------------------------*/
@@ -25,6 +25,7 @@ void OTA_Init(void)
 void processing_mqtt_data(uint8_t *data, uint16_t datalen)
 {
     #if 1
+    ESP8266_Sub_Pub_Topic_Aliyun(0); // 订阅主题
     if ((datalen == 4) && (data[0] == 0x20))                                    // 如果接收到4个字节 且是 第一个字节是0x20，进入if
     {                                 
         printf("收到CONNACK报文\r\n");                                           // 串口发送数据
@@ -196,7 +197,6 @@ void OTA_Version(void)
 
     memset(temp, 0, 128);                                                                 // 清空缓冲区
     sprintf(temp, "{\"id\": \"1\",\"params\": {\"version\": \"%s\"}}", OTA_Info.OTA_ver); // 构建数据
-
     MQTT_PublishDataQs1(UPLOAD_INFORMATION_PUB, temp); // 发送数据到服务器
 }
 /*-------------------------------------------------*/
