@@ -8,7 +8,9 @@
 
 #define  CONNECT_OK         0x00000001        //置位表明CONNECT报文成功
 #define  OTA_EVENT          0x00000002        //置位表明OTA事件发生  
-#define OTA_SET_FLAG        0xAABB1122        //OTA_flag对勾状态对应的数值，如果OTA_flag等于该值，说明需要OTA更新A区
+#define  OTA_SET_FLAG        0xAABB1122        //OTA_flag对勾状态对应的数值，如果OTA_flag等于该值，说明需要OTA更新A区
+
+#define OTA_PACK_ADDERS   0x08002000        //OTA固件起始地址
 
 typedef struct{
 	uint8_t   Pack_buff[PACK_BUFF_SIZE];     //报文数据缓冲区
