@@ -39,209 +39,174 @@ void ESP8266_uart_rx_clear(uint16_t len)
 
 uint8_t ESP8266_init(void)
 {
-    __HAL_UART_ENABLE_IT(&huart2, UART_IT_RXNE);
+    __HAL_UART_ENABLE_IT(&huart2, UART_IT_RXNE); // 启用UART接收中断
 
-    if (ESP8266_at_test() != ESP8266_EOK)
-    {
-        return ESP8266_ERROR;
-    }
-
-    return ESP8266_EOK;
+    // 检测AT命令是否可用，若不可用则返回错误
+    return (ESP8266_at_test() == ESP8266_EOK) ? ESP8266_EOK : ESP8266_ERROR;
 }
 
-uint8_t ESP8266_send_at_cmd(unsigned char *cmd, unsigned char len, char *ack)
+uint8_t ESP8266_send_at_cmd(unsigned char *cmd, unsigned char len, const char *ack)
 {
-    unsigned char retval = 0;
-    unsigned int count = 0;
-
+    // 发送AT命令
     HAL_UART_Transmit(&huart2, cmd, len, 1000);
 
-    while ((esp8266_uart_buff.receive_start == 0) && (count < 1000))
+    // 等待接收开始信号
+    for (unsigned int count = 0; count < 1000; count++)
     {
-        count++;
+        if (esp8266_uart_buff.receive_start)
+            break;
         HAL_Delay(1);
     }
 
-    if (count >= 1000)
+    // 检查接收状态
+    if (esp8266_uart_buff.receive_start == 0)
     {
-        retval = 1;
-    }
-    else
-    {
-        do
-        {
-            esp8266_uart_buff.receive_finish++;
-            HAL_Delay(1);
-        } while (esp8266_uart_buff.receive_finish < 500);
-
-        retval = 2;
-
-        if (strstr((const char *)esp8266_uart_buff.receive_buff, ack))
-        {
-            retval = 0;
-        }
+        return 1; // 超时
     }
 
-    ESP8266_uart_rx_clear(esp8266_uart_buff.receive_count);
-    return retval;
+    // 等待接收完成
+    for (unsigned int count = 0; count < 500; count++)
+    {
+        esp8266_uart_buff.receive_finish++;
+        HAL_Delay(1);
+    }
+
+    // 检查接收到的响应
+    if (strstr((const char *)esp8266_uart_buff.receive_buff, ack))
+    {
+        ESP8266_uart_rx_clear(esp8266_uart_buff.receive_count); // 清除接收缓冲区
+        return 0; // 成功
+    }
+
+    ESP8266_uart_rx_clear(esp8266_uart_buff.receive_count); // 清除接收缓冲区
+    return 2; // 未找到确认
 }
 
 uint8_t ESP8266_sw_reset(void)
 {
-    uint8_t ret;
-    ret = ESP8266_send_at_cmd((uint8_t *)"AT+RST\r\n", strlen("AT+RST\r\n"), "OK");
-
-    if (ret == ESP8266_EOK)
-    {
-        return ESP8266_EOK;
-    }
-    else
-    {
-        return ESP8266_ERROR;
-    }
+    // 发送软重置命令，并返回结果
+    return ESP8266_send_at_cmd((uint8_t *)"AT+RST\r\n", "OK", 2000); // 可根据需要调整超时时间
 }
 
 uint8_t ESP8266_at_test(void)
 {
-    uint8_t ret;
-    uint8_t i;
+    const char *at_cmd = "AT\r\n";
+    const char *expected_ack = "OK";
+    const uint8_t max_attempts = 10;
 
-    for (i = 0; i < 10; i++)
+    for (uint8_t i = 0; i < max_attempts; i++)
     {
-        ret = ESP8266_send_at_cmd((uint8_t *)"AT\r\n", strlen("AT\r\n"), "OK");
-
-        if (ret == ESP8266_EOK)
+        if (ESP8266_send_at_cmd((uint8_t *)at_cmd, strlen(at_cmd), expected_ack) == ESP8266_EOK)
         {
-            return ESP8266_EOK;
+            return ESP8266_EOK; // 成功响应
         }
     }
 
-    return ESP8266_ERROR;
+    return ESP8266_ERROR; // 超过最大尝试次数
 }
 
 uint8_t ESP8266_restore(void)
 {
-    uint8_t ret;
-    ret = ESP8266_send_at_cmd((uint8_t *)"AT+RESTORE\r\n", strlen("ready\r\n"), "OK");
-
-    if (ret == ESP8266_EOK)
-    {
-        return ESP8266_EOK;
-    }
-    else
-    {
-        return ESP8266_ERROR;
-    }
+    // 发送恢复出厂设置命令，并返回结果
+    return ESP8266_send_at_cmd((uint8_t *)"AT+RESTORE\r\n", "OK", 2000); // 可根据需要调整超时时间
 }
 
 uint8_t ESP8266_set_mode(uint8_t mode)
 {
+    const char *cmd_template = "AT+CWMODE=%d\r\n"; // AT命令模板
+    char cmd[20]; // 命令缓冲区
     uint8_t ret;
 
-    switch (mode)
+    // 根据模式设置命令
+    if (mode >= 1 && mode <= 3)
     {
-    case 1:
-    {
-        ret = ESP8266_send_at_cmd((uint8_t *)"AT+CWMODE=1\r\n", strlen("AT+CWMODE=1\r\n"), "OK"); /* Station模式 */
-        break;
-    }
-
-    case 2:
-    {
-        ret = ESP8266_send_at_cmd((uint8_t *)"AT+CWMODE=2\r\n", strlen("AT+CWMODE=2\r\n"), "OK"); /* AP模式 */
-        break;
-    }
-
-    case 3:
-    {
-        ret = ESP8266_send_at_cmd((uint8_t *)"AT+CWMODE=3\r\n", strlen("AT+CWMODE=3\r\n"), "OK"); /* AP+Station模式 */
-        break;
-    }
-
-    default:
-    {
-        return ESP8266_EINVAL;
-    }
-    }
-
-    if (ret == ESP8266_EOK)
-    {
-        return ESP8266_EOK;
+        snprintf(cmd, sizeof(cmd), cmd_template, mode); // 格式化命令
+        ret = ESP8266_send_at_cmd((uint8_t *)cmd, strlen(cmd), "OK");
     }
     else
     {
-        return ESP8266_ERROR;
+        return ESP8266_EINVAL; // 无效模式
     }
+
+    return (ret == ESP8266_EOK) ? ESP8266_EOK : ESP8266_ERROR; // 返回结果
 }
 
 uint8_t ESP8266_ate_config(uint8_t cfg)
 {
-    uint8_t ret;
+    const char *cmd;
 
+    // 根据cfg选择相应的AT命令
     switch (cfg)
     {
     case 0:
-    {
-        ret = ESP8266_send_at_cmd((uint8_t *)"ATE0\r\n", strlen("ATE0\r\n"), "OK"); /* 关闭回显 */
+        cmd = "ATE0\r\n"; // 关闭回显
         break;
-    }
-
     case 1:
-    {
-        ret = ESP8266_send_at_cmd((uint8_t *)"ATE1\r\n", strlen("ATE1\r\n"), "OK"); /* 打开回显 */
+        cmd = "ATE1\r\n"; // 打开回显
         break;
-    }
-
     default:
-    {
-        return ESP8266_EINVAL;
-    }
+        return ESP8266_EINVAL; // 返回无效参数错误
     }
 
-    if (ret == ESP8266_EOK)
-    {
-        return ESP8266_EOK;
-    }
-    else
-    {
-        return ESP8266_ERROR;
-    }
+    // 发送AT命令，并检查返回值
+    return ESP8266_send_at_cmd((uint8_t *)cmd, "OK", 1000);
 }
 
-uint8_t ESP8266_get_ip(char *buf)
+uint8_t ESP8266_get_ip(char *buf, size_t buf_size)
 {
     uint8_t ret;
-    char *p_start;
-    char *p_end;
 
+    // 发送获取IP的AT命令
     ret = ESP8266_send_at_cmd((uint8_t *)"AT+CIFSR\r\n", strlen("AT+CIFSR\r\n"), "OK");
     if (ret != ESP8266_EOK)
     {
-        return ESP8266_ERROR;
+        return ESP8266_ERROR; // 返回错误
     }
 
-    p_start = strstr((const char *)esp8266_uart_buff.receive_buff, "\"");
-    p_end = strstr(p_start + 1, "\"");
-    *p_end = '\0';
-    sprintf(buf, "%s", p_start + 1);
-    return ESP8266_EOK;
+    // 查找IP地址的开始和结束位置
+    char *p_start = strstr((const char *)esp8266_uart_buff.receive_buff, "\"");
+    if (p_start == NULL)
+    {
+        return ESP8266_ERROR; // 未找到开始引号
+    }
+    
+    char *p_end = strstr(p_start + 1, "\"");
+    if (p_end == NULL)
+    {
+        return ESP8266_ERROR; // 未找到结束引号
+    }
+
+    // 确保缓冲区足够大以容纳IP地址
+    size_t ip_length = p_end - (p_start + 1);
+    if (ip_length >= buf_size)
+    {
+        return ESP8266_ERROR; // 缓冲区不足
+    }
+
+    // 复制IP地址到buf
+    strncpy(buf, p_start + 1, ip_length);
+    buf[ip_length] = '\0'; // 确保字符串以NULL结束
+
+    return ESP8266_EOK; // 成功
 }
 
 uint8_t ESP8266_enter_unvarnished(void)
 {
     uint8_t ret;
 
+    // 发送AT命令以进入未加工模式
     ret = ESP8266_send_at_cmd((uint8_t *)"AT+CIPMODE=1\r\n", strlen("AT+CIPMODE=1\r\n"), "OK");
-    ret += ESP8266_send_at_cmd((uint8_t *)"AT+CIPSEND\r\n", strlen("AT+CIPSEND\r\n"), ">");
-    if (ret == ESP8266_EOK)
+    if (ret != ESP8266_EOK)
     {
-        return ESP8266_EOK;
+        return ESP8266_ERROR; // 若第一个命令失败，直接返回错误
     }
-    else
-    {
-        return ESP8266_ERROR;
-    }
+
+    // 发送AT命令以开始发送数据
+    ret = ESP8266_send_at_cmd((uint8_t *)"AT+CIPSEND\r\n", strlen("AT+CIPSEND\r\n"), ">");
+    
+    return (ret == ESP8266_EOK) ? ESP8266_EOK : ESP8266_ERROR; // 返回结果
 }
+
 void ESP8266_exit_unvarnished(void)
 {
     ESP8266_uart_printf("+++");
@@ -250,37 +215,34 @@ void ESP8266_exit_unvarnished(void)
 
 uint8_t ESP8266_join_wifi(void)
 {
-    uint8_t retval = 0;
+    uint8_t retval = 1; // 默认为失败状态
     uint16_t count = 0;
 
-    HAL_UART_Transmit(&huart2, (unsigned char *)"AT+CWJAP=\"" WIFI_SSID "\",\"" WIFI_PASSWD "\"\r\n", strlen("AT+CWJAP=\"" WIFI_SSID "\",\"" WIFI_PASSWD "\"\r\n"), 1000);
+    // 发送连接WiFi的AT命令
+    char cmd[100]; // 预留足够的空间来构建AT命令
+    snprintf(cmd, sizeof(cmd), "AT+CWJAP=\"%s\",\"%s\"\r\n", WIFI_SSID, WIFI_PASSWD);
+    HAL_UART_Transmit(&huart2, (unsigned char *)cmd, strlen(cmd), 1000);
 
+    // 等待接收缓冲区开始接收数据
     while ((esp8266_uart_buff.receive_start == 0) && (count < 1000))
     {
         count++;
         HAL_Delay(1);
     }
-
-    if (count >= 1000)
+    // 检查是否超时
+    if (count < 1000)
     {
-        retval = 1;
-    }
-    else
-    {
-        HAL_Delay(8000);
+        HAL_Delay(8000); // 等待连接WiFi的时间
 
+        // 检查AT命令的返回结果
         if (strstr((const char *)esp8266_uart_buff.receive_buff, "OK"))
         {
-            retval = 0;
-        }
-        else
-        {
-            retval = 1;
+            retval = 0; // 成功连接
         }
     }
-
+    // 清理接收缓冲区
     ESP8266_uart_rx_clear(esp8266_uart_buff.receive_count);
-    return retval;
+    return retval; // 返回结果
 }
 
 uint8_t ESP8266_config_mqtt(void)
@@ -302,8 +264,6 @@ uint8_t ESP8266_config_mqtt(void)
     }
     else
     {
-        HAL_Delay(5000);
-
         if (strstr((const char *)esp8266_uart_buff.receive_buff, "OK"))
         {
             retval = 0;
@@ -317,6 +277,7 @@ uint8_t ESP8266_config_mqtt(void)
     ESP8266_uart_rx_clear(esp8266_uart_buff.receive_count);
     return retval;
 }
+
 uint8_t ESP8266_connect_mqtt(void)
 {
     uint8_t retval = 0;
@@ -337,8 +298,6 @@ uint8_t ESP8266_connect_mqtt(void)
     }
     else
     {
-        HAL_Delay(5000);
-
         if (strstr((const char *)esp8266_uart_buff.receive_buff, "OK"))
         {
             retval = 0;
@@ -352,6 +311,7 @@ uint8_t ESP8266_connect_mqtt(void)
     ESP8266_uart_rx_clear(esp8266_uart_buff.receive_count);
     return retval;
 }
+
 uint8_t ESP8266_connect_tcp_server(void)
 {
     uint8_t retval = 0;
@@ -371,8 +331,6 @@ uint8_t ESP8266_connect_tcp_server(void)
     }
     else
     {
-        HAL_Delay(5000);
-
         if (strstr((const char *)esp8266_uart_buff.receive_buff, "OK"))
         {
             retval = 0;
@@ -450,6 +408,7 @@ uint8_t esp8266_send_msg(void)
     ESP8266_uart_rx_clear(esp8266_uart_buff.receive_count);
     return retval;
 }
+
 /**
  * @brief          esp8266接收数据
  * @param[in]      none
@@ -564,3 +523,4 @@ uint8_t ESP8266_Sub_Pub_Topic_Aliyun(uint8_t subTopicMode)
         break;
     }
 }
+
