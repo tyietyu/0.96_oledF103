@@ -4,6 +4,16 @@
 #include "main.h"
 #include "core_json.h"
 
+typedef enum {
+    SUB_MESSAGE = 0,
+    PUB_DEVICE_INFO,
+    PUB_FIRMWARE_INFO,
+    SUB_FIRMWARE_INFO,
+    PUB_DEVICE_REQUEST,
+    PUB_FIRMWARE_PROGRESS,
+    TOPIC_MAX
+} MQTT_Topic_Type;
+
 /*需要链接的WIFI名称以及密码*/
 #define WIFI_SSID        "XiaomiPro"
 #define WIFI_PASSWD      "123456789l"
@@ -56,7 +66,7 @@ void ESP8266_uart_printf(char *fmt, ...);
 void ESP8266_uart_rx_clear(uint16_t len);             /* ESP8266 UART重新开始接收数据 */
 
 /* 操作函数 */
-uint8_t ESP8266_send_at_cmd(unsigned char *cmd,unsigned char len, char *ack);    /* ESP8266发送AT指令 */
+uint8_t ESP8266_send_at_cmd(unsigned char *cmd, unsigned char len, const char *ack);  /* ESP8266发送AT指令 */
 uint8_t ESP8266_init(void);                                				/* ESP8266初始化 */
 uint8_t ESP8266_restore(void);                                          /* ESP8266恢复出厂设置 */
 uint8_t ESP8266_at_test(void);                                          /* ESP8266 AT指令测试 */
@@ -64,7 +74,7 @@ uint8_t ESP8266_set_mode(uint8_t mode);                                 /* 设�
 uint8_t ESP8266_sw_reset(void);                                         /* ESP8266软件复位 */
 uint8_t ESP8266_ate_config(uint8_t cfg);                                /* ESP8266设置回显模式 */
 uint8_t ESP8266_join_wifi(void);                         				/* ESP8266连接WIFI */
-uint8_t ESP8266_get_ip(char *buf);                                      /* ESP8266获取IP地址 */
+uint8_t ESP8266_get_ip(char *buf, size_t buf_size);                     /* ESP8266获取IP地址 */
 uint8_t ESP8266_config_mqtt(void);                                      /*ESP8266配置用户MQTT*/
 uint8_t ESP8266_connect_mqtt(void);                                    /* ESP8266连接MQTT */
 uint8_t ESP8266_connect_tcp_server(void); 								/* ESP8266连接TCP服务器地址 */
@@ -74,7 +84,7 @@ void ESP8266_exit_unvarnished(void);                                    /* ESP82
 uint8_t parse_json_msg(uint8_t *json_msg,uint8_t json_len); 
 uint8_t esp8266_send_msg(void);
 uint8_t esp8266_receive_msg(void);
-uint8_t ESP8266_Sub_Pub_Topic_Aliyun(uint8_t subTopicMode);           /* ESP8266订阅/发布主题 */
+uint8_t ESP8266_Sub_Pub_Topic_Aliyun(MQTT_Topic_Type subTopicMode);     /* ESP8266订阅/发布主题 */
 
 
 #endif

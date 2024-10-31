@@ -84,8 +84,8 @@ uint8_t ESP8266_send_at_cmd(unsigned char *cmd, unsigned char len, const char *a
 
 uint8_t ESP8266_sw_reset(void)
 {
-    // 发送软重置命令，并返回结果
-    return ESP8266_send_at_cmd((uint8_t *)"AT+RST\r\n", "OK", 2000); // 可根据需要调整超时时间
+    const char *cmd = "AT+RST\r\n";
+    return ESP8266_send_at_cmd((unsigned char *)cmd,strlen(cmd), "OK"); // 可根据需要调整超时时间
 }
 
 uint8_t ESP8266_at_test(void)
@@ -107,8 +107,9 @@ uint8_t ESP8266_at_test(void)
 
 uint8_t ESP8266_restore(void)
 {
-    // 发送恢复出厂设置命令，并返回结果
-    return ESP8266_send_at_cmd((uint8_t *)"AT+RESTORE\r\n", "OK", 2000); // 可根据需要调整超时时间
+    
+	const char *cmd = "AT+RESTORE\r\n";
+    return ESP8266_send_at_cmd((unsigned char *)cmd,strlen(cmd), "OK"); // 可根据需要调整超时时间
 }
 
 uint8_t ESP8266_set_mode(uint8_t mode)
@@ -149,7 +150,7 @@ uint8_t ESP8266_ate_config(uint8_t cfg)
     }
 
     // 发送AT命令，并检查返回值
-    return ESP8266_send_at_cmd((uint8_t *)cmd, "OK", 1000);
+    return ESP8266_send_at_cmd((unsigned char *)cmd, strlen(cmd),"OK");
 }
 
 uint8_t ESP8266_get_ip(char *buf, size_t buf_size)
@@ -157,7 +158,7 @@ uint8_t ESP8266_get_ip(char *buf, size_t buf_size)
     uint8_t ret;
 
     // 发送获取IP的AT命令
-    ret = ESP8266_send_at_cmd((uint8_t *)"AT+CIFSR\r\n", strlen("AT+CIFSR\r\n"), "OK");
+    ret = ESP8266_send_at_cmd((unsigned char *)"AT+CIFSR\r\n", strlen("AT+CIFSR\r\n"), "OK");
     if (ret != ESP8266_EOK)
     {
         return ESP8266_ERROR; // 返回错误
@@ -490,37 +491,35 @@ uint8_t parse_json_msg(uint8_t *json_msg, uint8_t json_len)
     return retval;
 }
 
-uint8_t ESP8266_Sub_Pub_Topic_Aliyun(uint8_t subTopicMode)
+uint8_t ESP8266_Sub_Pub_Topic_Aliyun(MQTT_Topic_Type subTopicMode)
 {
-    uint8_t retval = 0;
+    const char* cmd;
+    size_t cmd_len;
+
     switch (subTopicMode)
     {
-    case 0: // 获取Aliyun IoT平台下发的消息
-        retval = ESP8266_send_at_cmd((uint8_t *)"AT+MQTTSUB=0,\"" SUB_TOPIC "\",1\r\n", strlen("AT+MQTTSUB=0,\"" SUB_TOPIC "\",1\r\n"), "OK");
-        return retval;
+    case SUB_MESSAGE:
+        cmd = "AT+MQTTSUB=0,\"" SUB_TOPIC "\",1\r\n";
         break;
-    case 1: // 上报设备信息到Aliyun IoT平台
-        retval = ESP8266_send_at_cmd((uint8_t *)"AT+MQTTPUB=0,\"" PUB_TOPIC "\",1\r\n", strlen("AT+MQTPUB=0,\"" PUB_TOPIC "\",1\r\n"), "OK");
-        return retval;
+    case PUB_DEVICE_INFO:
+        cmd = "AT+MQTTPUB=0,\"" PUB_TOPIC "\",1\r\n";
         break;
-    case 2: // 设备上报固件升级信息
-        retval = ESP8266_send_at_cmd((uint8_t *)"AT+MQTTPUB=0,\"" UPLOAD_INFORMATION_PUB "\",1\r\n", strlen("AT+MQTTPUB=0,\"" UPLOAD_INFORMATION_PUB "\",1\r\n"), "OK");
-        return retval;
+    case PUB_FIRMWARE_INFO:
+        cmd = "AT+MQTTPUB=0,\"" UPLOAD_INFORMATION_PUB "\",1\r\n";
         break;
-    case 3: // 固件升级信息下行
-        retval = ESP8266_send_at_cmd((uint8_t *)"AT+MQTTSUB=0,\"" DOWNLOAD_INFORMATION_SUB "\",1\r\n", strlen("AT+MQTTSUB=0,\"" DOWNLOAD_INFORMATION_SUB "\",1\r\n"), "OK");
-        return retval;
+    case SUB_FIRMWARE_INFO:
+        cmd = "AT+MQTTSUB=0,\"" DOWNLOAD_INFORMATION_SUB "\",1\r\n";
         break;
-    case 4: // 设备主动拉取固件升级信息
-        retval = ESP8266_send_at_cmd((uint8_t *)"AT+MQTTPUB=0,\"" DEVICE_ACTIVELY_INFORMATION_PUB "\",1\r\n", strlen("AT+MQTTPUB=0,\"" DEVICE_ACTIVELY_INFORMATION_PUB "\",1\r\n"), "OK");
-        return retval;
+    case PUB_DEVICE_REQUEST:
+        cmd = "AT+MQTTPUB=0,\"" DEVICE_ACTIVELY_INFORMATION_PUB "\",1\r\n";
         break;
-    case 5: // 设备上报固件升级进度
-        retval = ESP8266_send_at_cmd((uint8_t *)"AT+MQTTPUB=0,\"" DEVICE_REPORTS_PROGRESS_PUB "\",1\r\n", strlen("AT+MQTTPUB=0,\"" DEVICE_REPORTS_PROGRESS_PUB "\",1\r\n"), "OK");
-        return retval;
+    case PUB_FIRMWARE_PROGRESS:
+        cmd = "AT+MQTTPUB=0,\"" DEVICE_REPORTS_PROGRESS_PUB "\",1\r\n";
         break;
     default:
-        break;
+        return 1; // 错误：无效的主题类型
     }
-}
 
+    cmd_len = strlen(cmd);
+    return ESP8266_send_at_cmd((uint8_t *)cmd, cmd_len, "OK");
+}

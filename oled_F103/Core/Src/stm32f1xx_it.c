@@ -45,6 +45,8 @@
 /* USER CODE BEGIN PV */
 extern ESP8266_UART_Buffer esp8266_uart_buff;	   
 extern MQTT_CB mqtt_cb;
+extern volatile uint8_t mqtt_receive_complete;
+extern volatile uint16_t mqtt_receive_count;
    				
 /* USER CODE END PV */
 

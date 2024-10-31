@@ -28,9 +28,6 @@ typedef struct{
 	uint8_t  OTA_tempver[32];     //OTA下载临时版本号缓冲区
 }MQTT_CB;
 
-volatile uint16_t mqtt_receive_count = 0;
-volatile uint8_t mqtt_receive_complete = 0;
-
 typedef struct{          
 	uint32_t OTA_flag;                        //标志性的变量，等于OTA_SET_FLAG定义的值时，表明需要OTA更新A区
 	uint32_t Firelen[11];                     //W25Q64中不同块中程序固件的长度，0号成员固定对应W25Q64中编码0的块，用于OTA

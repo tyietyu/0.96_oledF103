@@ -3,8 +3,9 @@
 #include "usart.h"
 #include "flash.h"
 
-ESP8266_UART_Buffer esp8266_uart_buff;
+extern ESP8266_UART_Buffer esp8266_uart_buff;
 MQTT_CB Aliyun_mqtt;
+OTA_InfoCB OTA_Info;
 extern uint32_t BootStaFlag;
 
 void OTA_Init(void)
@@ -18,11 +19,9 @@ void OTA_Init(void)
 }
 
 /*
-* 函数名：OTA升级处理函数
-
-* 参  数：无
-
-*/
+ * 函数名：OTA升级处理函数
+ * 参  数：无
+ */
 void OTA_Deal_MQTT_Data(uint8_t *data, uint16_t datalen)
 {
     if ((datalen == 4) && (data[0] == 0x20)) // 如果接收到4个字节 且是 第一个字节是0x20，进入if
@@ -65,11 +64,11 @@ void OTA_Deal_MQTT_Data(uint8_t *data, uint16_t datalen)
         {
             if (sscanf((char *)Aliyun_mqtt.CMD_buff, "/ota/device/upgrade/k1644sbngGw/AT_MQTT{\"code\":\"1000\",\"data\":{\"size\":%d,\"streamId\":%d,\"sign\":\"%*32s\",\"dProtocol\":\"mqtt\",\"version\":\"%26s\",\"signMethod\":\"Md5\",\"streamFileId\":1,\"md5\":\"%*32s\"},\"id\":%*d,\"message\":\"success\"}", &Aliyun_mqtt.size, &Aliyun_mqtt.streamId, Aliyun_mqtt.OTA_tempver) == 3)
             {
-                printf("OTA固件大小:%d\r\n", Aliyun_mqtt.size);            
-                printf("OTA固件ID:%d\r\n", Aliyun_mqtt.streamId);         
-                printf("OTA固件版本号:%s\r\n", Aliyun_mqtt.OTA_tempver);   
-                BootStaFlag |= OTA_EVENT; 
-                if(Aliyun_mqtt.size % 256 == 0)
+                printf("OTA固件大小:%d\r\n", Aliyun_mqtt.size);
+                printf("OTA固件ID:%d\r\n", Aliyun_mqtt.streamId);
+                printf("OTA固件版本号:%s\r\n", Aliyun_mqtt.OTA_tempver);
+                BootStaFlag |= OTA_EVENT;
+                if (Aliyun_mqtt.size % 256 == 0)
                 {
                     Aliyun_mqtt.counter = Aliyun_mqtt.size / 256;
                 }
@@ -79,40 +78,45 @@ void OTA_Deal_MQTT_Data(uint8_t *data, uint16_t datalen)
                 }
                 Aliyun_mqtt.num = 1;
                 Aliyun_mqtt.downlen = 256;
-                OTA_Download(Aliyun_mqtt.downlen, (Aliyun_mqtt.num - 1)*256);
+                OTA_Download(Aliyun_mqtt.downlen, (Aliyun_mqtt.num - 1) * 256);
             }
             else
             {
                 printf("OTA固件信息解析错误\r\n");
             }
         }
-        if(strstr((char *)Aliyun_mqtt.CMD_buff, DEVICE_DOWNLOAD_FILE_REPLY))
+        if (strstr((char *)Aliyun_mqtt.CMD_buff, DEVICE_DOWNLOAD_FILE_REPLY))
         {
-            iap_write_flash(OTA_PACK_ADDERS,&data[datalen - Aliyun_mqtt.downlen - 2], Aliyun_mqtt.num - 1);
+            uint16_t temp[(Aliyun_mqtt.num - 1 + 1) / 2]; // +1 和 /2 是为了向上取整
+            for (int i = 0; i < Aliyun_mqtt.num - 1; i += 2)
+            {
+                temp[i / 2] = (data[datalen - Aliyun_mqtt.downlen - 2 + i] << 8) | data[datalen - Aliyun_mqtt.downlen - 2 + i + 1];
+            }
+            iap_write_flash(OTA_PACK_ADDERS, temp, Aliyun_mqtt.num - 1);
             Aliyun_mqtt.num++;
-            if(Aliyun_mqtt.num < Aliyun_mqtt.counter)
+            if (Aliyun_mqtt.num < Aliyun_mqtt.counter)
             {
                 Aliyun_mqtt.downlen = 256;
-                OTA_Download(Aliyun_mqtt.downlen, (Aliyun_mqtt.num - 1)*256);
+                OTA_Download(Aliyun_mqtt.downlen, (Aliyun_mqtt.num - 1) * 256);
             }
             else if (Aliyun_mqtt.num == Aliyun_mqtt.counter)
             {
-                if(Aliyun_mqtt.size % 256 == 0)
+                if (Aliyun_mqtt.size % 256 == 0)
                 {
                     Aliyun_mqtt.downlen = 256;
-                    OTA_Download(Aliyun_mqtt.downlen, (Aliyun_mqtt.num - 1)*256);
+                    OTA_Download(Aliyun_mqtt.downlen, (Aliyun_mqtt.num - 1) * 256);
                 }
                 else
                 {
                     Aliyun_mqtt.downlen = Aliyun_mqtt.size % 256;
-                    OTA_Download(Aliyun_mqtt.downlen, (Aliyun_mqtt.num - 1)*256);
+                    OTA_Download(Aliyun_mqtt.downlen, (Aliyun_mqtt.num - 1) * 256);
                 }
             }
             else
             {
                 printf("OTA固件下载完成\r\n");
                 memset(OTA_Info.OTA_ver, 0, 32);
-                memcpy(OTA_Info.OTA_ver, Aliyun_mqtt.OTA_tempver, strlen(Aliyun_mqtt.OTA_tempver));
+                memcpy(OTA_Info.OTA_ver, Aliyun_mqtt.OTA_tempver, strlen((const char *)Aliyun_mqtt.OTA_tempver));
                 OTA_Info.Firelen[0] = Aliyun_mqtt.size;
                 OTA_Info.OTA_flag = OTA_SET_FLAG;
                 HAL_NVIC_SystemReset();
