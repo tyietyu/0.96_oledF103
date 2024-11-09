@@ -43,8 +43,8 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-extern ESP8266_UART_Buffer esp8266_uart_buff;	   
-extern MQTT_CB mqtt_cb;
+	   
+
 extern volatile uint8_t mqtt_receive_complete;
 extern volatile uint16_t mqtt_receive_count;
    				
@@ -240,20 +240,7 @@ void USART1_IRQHandler(void)
 void USART2_IRQHandler(void)
 {
   /* USER CODE BEGIN USART2_IRQn 0 */
-   unsigned char receive_data = 0;   
-  if(__HAL_UART_GET_FLAG(&huart2,UART_FLAG_RXNE) != RESET)
-  {
-    HAL_UART_Receive(&huart2, &receive_data, 1, 1000);
-    if(mqtt_receive_count < PACK_BUFF_SIZE)
-    {
-      Aliyun_mqtt.Pack_buff[mqtt_receive_count++] = receive_data;
-      mqtt_receive_complete=1;
-    }
-    // esp8266_uart_buff.receive_buff[esp8266_uart_buff.receive_count++] = receive_data;
-    memcpy(&esp8266_uart_buff.receive_buff,&Aliyun_mqtt.Pack_buff,sizeof(Aliyun_mqtt.Pack_buff));
-    esp8266_uart_buff.receive_start = 1;	                              
-    esp8266_uart_buff.receive_finish = 0;	                              
-  }
+ hal_uart_irq_callback();
   /* USER CODE END USART2_IRQn 0 */
   HAL_UART_IRQHandler(&huart2);
   /* USER CODE BEGIN USART2_IRQn 1 */

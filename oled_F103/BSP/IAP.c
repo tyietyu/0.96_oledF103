@@ -3,19 +3,18 @@
 #include "usart.h"
 #include "flash.h"
 
-extern ESP8266_UART_Buffer esp8266_uart_buff;
 MQTT_CB Aliyun_mqtt;
 OTA_InfoCB OTA_Info;
 extern uint32_t BootStaFlag;
 
 void OTA_Init(void)
 {
-    ESP8266_sw_reset();
-    ESP8266_set_mode(1);
-    ESP8266_ate_config(0);
-    ESP8266_join_wifi();
-    ESP8266_Connect_Aliyun();
-    ESP8266_Sub_Pub_Topic_Aliyun(0);
+//    ESP8266_sw_reset();
+//    ESP8266_set_mode(1);
+//    ESP8266_ate_config(0);
+//    ESP8266_join_wifi();
+//    ESP8266_Connect_Aliyun();
+//    ESP8266_Sub_Pub_Topic_Aliyun(0);
 }
 
 /*

@@ -30,7 +30,7 @@
 #include "mpu6050.h"
 #include "WS2812B.h"
 #include "esp8266.h"
-#include "IAP.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -115,7 +115,7 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
   //OLED_Init();
-  ESP8266_init();
+  ESP8266_init(3,1);
   ESP8266_demo();
   time2_start();
   // while (MPU6050_Init(&hi2c2) == 1) {};
@@ -129,7 +129,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    espTopic_pub_sub_demo();
+    
     HAL_Delay(100);
   }
 
@@ -177,69 +177,7 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 void ESP8266_demo(void)
 {
-  printf("1.RESET ESP8266\r\n");
-  while (ESP8266_sw_reset() != 0)
-  {
-    HAL_Delay(5000);
-  }
 
-  printf("2.SETTING STATION MODE\r\n");
-  ESP8266_set_mode(1);
-  HAL_Delay(1000);
-
-  printf("3.CLOSE ESP8266 ECHO\r\n");
-  ESP8266_ate_config(0);
-  HAL_Delay(1000);
-
-  printf("4.NO AUTO CONNECT WIFI\r\n");
-  while (ESP8266_send_at_cmd((uint8_t *)"AT+CWAUTOCONN=0\r\n", strlen("AT+CWAUTOCONN=0\r\n"), "OK") != 0)
-  {
-    HAL_Delay(1000);
-  }
-
-  printf("5.CONNECT WIFI NETWORK\r\n");
-  while (ESP8266_join_wifi() != 0)
-  {
-    HAL_Delay(8000);
-  }
-
-  printf("6.MQTT USER CONFIG\r\n");
-  while (ESP8266_config_mqtt() != 0)
-  {
-    HAL_Delay(8000);
-  }
-
-  printf("7.Connect AliyunCloude\r\n");
-  while (ESP8266_Connect_Aliyun() != 0)
-  {
-    HAL_Delay(8000);
-  }
-
-  printf("8.CONNECT MQTT BROKER\r\n");
-  while (ESP8266_connect_tcp_server() != 0)
-  {
-    HAL_Delay(8000);
-  }
-  printf(" 9. ESP8266 INIT OK!!!\r\n");
-}
-
-void espTopic_pub_sub_demo(void)
-{
-  led_status = 0;
-  led_vol = 5;
-  while (esp8266_send_msg() != 0)
-  {
-    HAL_Delay(5000);
-  }
-  HAL_Delay(1000);
-  while (ESP8266_Sub_Pub_Topic_Aliyun(SUB_MESSAGE) != 0)
-  {
-    HAL_Delay(5000);
-  }
-  while (esp8266_receive_msg() != 0)
-  {
-    HAL_Delay(5000);
-  }
 }
 
 /* USER CODE END 4 */

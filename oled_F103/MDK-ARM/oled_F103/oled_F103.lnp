@@ -30,7 +30,6 @@
 "oled_f103\ws2812b.o"
 "oled_f103\esp8266.o"
 "oled_f103\core_json.o"
-"oled_f103\iap.o"
 "oled_f103\flash.o"
 --library_type=microlib --strict --scatter "oled_F103\oled_F103.sct"
 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols

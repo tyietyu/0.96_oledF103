@@ -1,90 +1,111 @@
 #ifndef _ESP8266_H_
 #define _ESP8266_H_
 
-#include "main.h"
-#include "core_json.h"
+#include  "main.h"
+#include "stdint.h"
+#include "string.h"
+#include "stdio.h"
+#include "stdlib.h"
+#include "stdarg.h"
 
-typedef enum {
-    SUB_MESSAGE = 0,
-    PUB_DEVICE_INFO,
-    PUB_FIRMWARE_INFO,
-    SUB_FIRMWARE_INFO,
-    PUB_DEVICE_REQUEST,
-    PUB_FIRMWARE_PROGRESS,
-    TOPIC_MAX
-} MQTT_Topic_Type;
+typedef enum
+{
+    ESP8266_EOK=0,
+    ESP8266_ERROR,
+    ESP8266_TIMEOUT,
+    ESP8266_BUSY,
+    ESP8266_EINVAL,
+} esp8266_state_t;
 
-/*需要链接的WIFI名称以及密码*/
-#define WIFI_SSID        "XiaomiPro"
-#define WIFI_PASSWD      "123456789l"
-
-/*ESP8266 设备信息*/
-#define ProductKey         "k1644sbngGw"
-#define DeviceName         "AT_MQTT"
-#define DeviceSecret       "1038f2eead281b6e90427a69d9cd532b"
-
-/*esp8266 MQTT 连接参数*/
-#define MQTT_USER_NAME   "AT_MQTT&k1644sbngGw"
-#define MQTT_CLIENT_ID   "k1644sbngGw.AT_MQTT|securemode=2\\,signmethod=hmacsha256\\,timestamp=1722604000001|"   
-#define MQTT_PASSWD      "35d93f05a230fb364ac51438ed45f67c42d0c0fd4a2f792298297d106afdbad3"
-#define BROKER_ASDDRESS  "k1644sbngGw.iot-as-mqtt.cn-shanghai.aliyuncs.com"
-
-/*阿里云订阅&发布消息mqtt协议指令*/
-#define SUB_TOPIC               "/k1644sbngGw/AT_MQTT/user/get"
-#define PUB_TOPIC	            "/sys/k1644sbngGw/AT_MQTT/thing/event/property/post"
-#define JSON_FORMAT               "{\\\"params\\\":{\\\"esp8266_adc_data\\\":%d\\,\\\"LED\\\":%d\\}\\,\\\"version\\\":\\\"1.0.0\\\"}"
-#define JSON_FORMAT_FIRMWARE      "{\\\"id\\\":\\\"0011\\\",\\\"params\\\":{\\\"version\\\":\\\"1.0.0\\\"}}"
-#define DEVICE_ATTRIBUTES       "/sys/k1644sbngGw/AT_MQTT/thing/service/property/set"               //设备属性上报
-
-/*阿里云OTA 升级 */
-#define UPLOAD_INFORMATION_PUB              "/ota/device/inform/k1644sbngGw/AT_MQTT"                       //设备上报固件升级信息
-#define DOWNLOAD_INFORMATION_SUB            "/ota/device/upgrade/k1644sbngGw/AT_MQTT"                      //固件升级信息下行,物联网平台推送OTA升级包信息
-#define DEVICE_ACTIVELY_INFORMATION_PUB     "/sys/k1644sbngGw/AT_MQTT/thing/ota/firmware/get"             //设备主动拉取固件升级信息
-#define DEVICE_REPORTS_PROGRESS_PUB         "/ota/device/progress/k1644sbngGw/AT_MQTT"                     //设备上报固件升级进度
-#define DEVICE_DOWNLOAD_FILE                "/sys/k1644sbngGw/AT_MQTT/thing/file/download_reply" 
-#define DEVICE_DOWNLOAD_FILE_REPLY        "/sys/k1644sbngGw/AT_MQTT/thing/file/download"
-/* 错误代码 */
-#define ESP8266_EOK         0   /* 没有错误 */
-#define ESP8266_ERROR       1   /* 通用错误 */
-#define ESP8266_ETIMEOUT    2   /* 超时错误 */
-#define ESP8266_EINVAL      3   /* 参数错误 */
-
-#define ESP8266_UART_RX_BUF_SIZE            128
-#define ESP8266_UART_TX_BUF_SIZE            128
-
+// Wi-Fi 连接信息结构体
 typedef struct {
-    unsigned char receive_buff[ESP8266_UART_RX_BUF_SIZE];  // 接收缓冲区
-    unsigned char send_buff[ESP8266_UART_TX_BUF_SIZE];     // 发送缓冲区
-    uint8_t receive_start;                                 // 接收开始标志位
-    uint16_t receive_count;                                // 接收计数器
-    uint16_t receive_finish;                               // 接收结束标志位
-} ESP8266_UART_Buffer;
+    const char *ssid;             // Wi-Fi 名称
+    const char *password;         // Wi-Fi 密码
+} wifi_config_t;
 
-extern ESP8266_UART_Buffer esp8266_uart_buff;
+// ESP8266 设备信息结构体
+typedef struct {
+    const char *product_key;      // 产品 Key
+    const char *device_name;      // 设备名称
+    const char *device_secret;    // 设备密钥
+} esp8266_device_info_t;
 
-void ESP8266_uart_printf(char *fmt, ...);       
-void ESP8266_uart_rx_clear(uint16_t len);             /* ESP8266 UART重新开始接收数据 */
+// ESP8266 MQTT 连接信息结构体
+typedef struct {
+    const char *username;         // MQTT 用户名
+    const char *client_id;        // MQTT 客户端 ID
+    const char *password;         // MQTT 密码
+    const char *broker_address;   // MQTT 代理地址
+} mqtt_config_t;
 
-/* 操作函数 */
-uint8_t ESP8266_send_at_cmd(unsigned char *cmd, unsigned char len, const char *ack);  /* ESP8266发送AT指令 */
-uint8_t ESP8266_init(void);                                				/* ESP8266初始化 */
-uint8_t ESP8266_restore(void);                                          /* ESP8266恢复出厂设置 */
-uint8_t ESP8266_at_test(void);                                          /* ESP8266 AT指令测试 */
-uint8_t ESP8266_set_mode(uint8_t mode);                                 /* 设置ESP8266工作模式 */
-uint8_t ESP8266_sw_reset(void);                                         /* ESP8266软件复位 */
-uint8_t ESP8266_ate_config(uint8_t cfg);                                /* ESP8266设置回显模式 */
-uint8_t ESP8266_join_wifi(void);                         				/* ESP8266连接WIFI */
-uint8_t ESP8266_get_ip(char *buf, size_t buf_size);                     /* ESP8266获取IP地址 */
-uint8_t ESP8266_config_mqtt(void);                                      /*ESP8266配置用户MQTT*/
-uint8_t ESP8266_connect_mqtt(void);                                    /* ESP8266连接MQTT */
-uint8_t ESP8266_connect_tcp_server(void); 								/* ESP8266连接TCP服务器地址 */
-uint8_t ESP8266_Connect_Aliyun(void);								    /* ESP8266连接阿里云 */
-uint8_t ESP8266_enter_unvarnished(void);                                /* ESP8266进入透传 */
-void ESP8266_exit_unvarnished(void);                                    /* ESP8266退出透传 */
-uint8_t parse_json_msg(uint8_t *json_msg,uint8_t json_len); 
-uint8_t esp8266_send_msg(void);
-uint8_t esp8266_receive_msg(void);
-uint8_t ESP8266_Sub_Pub_Topic_Aliyun(MQTT_Topic_Type subTopicMode);     /* ESP8266订阅/发布主题 */
+// 订阅和发布主题及消息格式结构体
+typedef struct {
+    const char *sub_topic;        // 订阅主题
+    const char *pub_topic;        // 发布主题
+    const char *json_format;      // JSON 消息格式
+    const char *json_format_firmware; // JSON 固件版本格式
+    const char *device_attributes; // 设备属性上报
+} mqtt_topics_t;
+
+// OTA 相关信息结构体
+typedef struct {
+    const char *upload_info_pub;               // 上传信息
+    const char *download_info_sub;            // 下载信息
+    const char *device_active_info_pub;       // 设备主动拉取信息
+    const char *device_report_progress_pub;    // 设备上报进度
+    const char *device_download_file;            // 下载文件
+    const char *device_download_file_reply;   // 下载文件回复
+} ota_info_t;
+
+// 综合配置结构体
+typedef struct {
+    wifi_config_t wifi;                     // Wi-Fi 信息
+    esp8266_device_info_t device_info;      // 设备信息
+    mqtt_config_t mqtt;                     // MQTT 信息
+    mqtt_topics_t mqtt_topics;              // MQTT 主题与消息格式
+    ota_info_t ota;                         // OTA 信息
+} esp8266_config_t;
+
+typedef struct
+{
+    unsigned char receive_buff[512];
+    unsigned char send_buff[512];
+    uint8_t receive_start;
+    uint16_t receive_count;
+    uint16_t receive_finish;
+} esp8266_buffer_t;
+
+typedef struct
+{
+    uint8_t (*init)(uint8_t esp8266_mode,uint8_t esp8266_cfg);
+    uint8_t (*esp8266_sw_reset)(void);
+    uint8_t (*esp8266_restore)(void);
+    uint8_t (*connect_wifi)(const char *wifi_ssid, const char *password);
+    uint8_t (*login_to_cloud)(const char *mqtt_name, const char *mqtt_password, const char *mqtt_client_id, const char *broker_address);
+
+    esp8266_config_t esp8266_config;
+} esp8266_init_t;
+
+typedef struct
+{
+	UART_HandleTypeDef *uart_port;
+    void (*delay_ms)(uint32_t ms);
+    void (*uart_send)(uint8_t *data, size_t length);
+    void (*uart_receive)(uint8_t *data, size_t length);
+    void (*uart_irq_callback)(void);
+
+    esp8266_buffer_t esp8266_buffer;
+} uart_init_t;
+
+void hal_uart_irq_callback(void);
+void hal_uart_send(uint8_t *data, size_t length);
+void hal_uart_receive(uint8_t *data, size_t length);
+
+uint8_t ESP8266_connect_wifi(const char *wifi_ssid, const char *password);
+uint8_t ESP8266_connect_to_cloud(const char *mqtt_name, const char *mqtt_password, const char *mqtt_client_id, const char *broker_address);
+uint8_t ESP8266_init(uint8_t esp8266_mode,uint8_t esp8266_cfg);
+uint8_t ESP8266_send_msg(const char *topic, const char *msg_format, ...);
+uint8_t ESP8266_receive_msg(const char *topic, uint8_t *msg_data, uint16_t msg_len);
 
 
 #endif

@@ -661,11 +661,6 @@
               <FilePath>..\BSP\core_json.c</FilePath>
             </File>
             <File>
-              <FileName>IAP.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\BSP\IAP.c</FilePath>
-            </File>
-            <File>
               <FileName>flash.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\BSP\flash.c</FilePath>
