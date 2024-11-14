@@ -65,7 +65,9 @@ typedef struct {
     mqtt_topics_t mqtt_topics;              // MQTT 主题与消息格式
     ota_info_t ota;                         // OTA 信息
 } esp8266_config_t;
+extern esp8266_config_t esp8266_config;
 
+#pragma pack(push, 4)
 typedef struct
 {
     unsigned char receive_buff[512];
@@ -74,7 +76,7 @@ typedef struct
     uint16_t receive_count;
     uint16_t receive_finish;
 } esp8266_buffer_t;
-
+#pragma pack(pop)
 typedef struct
 {
     uint8_t (*init)(uint8_t esp8266_mode,uint8_t esp8266_cfg);
@@ -96,6 +98,7 @@ typedef struct
 
     esp8266_buffer_t esp8266_buffer;
 } uart_init_t;
+extern uart_init_t uart_init; 
 
 void hal_uart2_receiver_handle(void);
 void hal_uart_send(uint8_t *data, size_t length);

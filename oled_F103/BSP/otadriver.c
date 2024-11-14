@@ -1,21 +1,13 @@
-#include "IAP.h"
+#include "otadriver.h"
 #include "esp8266.h"
 #include "usart.h"
 #include "flash.h"
 
 MQTT_CB Aliyun_mqtt;
 OTA_InfoCB OTA_Info;
-extern uint32_t BootStaFlag;
-
-void OTA_Init(void)
-{
-//    ESP8266_sw_reset();
-//    ESP8266_set_mode(1);
-//    ESP8266_ate_config(0);
-//    ESP8266_join_wifi();
-//    ESP8266_Connect_Aliyun();
-//    ESP8266_Sub_Pub_Topic_Aliyun(0);
-}
+volatile uint32_t BootStaFlag;
+esp8266_config_t esp8266_config;
+uart_init_t uart_init;
 
 /*
  * 函数名：OTA升级处理函数
@@ -30,7 +22,7 @@ void OTA_Deal_MQTT_Data(uint8_t *data, uint16_t datalen)
         {                                            // 判断第4个字节，如果是0x00，进入if
             printf("CONNECT报文成功连接服务器\r\n"); // 串口发送数据
             BootStaFlag |= CONNECT_OK;               // 设置标志位，表示CONNECT报文成功
-            MQTT_SubcribPack(DEVICE_ATTRIBUTES);     // 发送订阅Topic报文
+            MQTT_SubcribPack(esp8266_config.ota.device_active_info_pub);     // 发送订阅Topic报文
             OTA_Version();                           // 上传当前版本号
         }
         else
@@ -59,9 +51,9 @@ void OTA_Deal_MQTT_Data(uint8_t *data, uint16_t datalen)
         MQTT_DealPublishData(data, datalen);
         printf("%s\r\n", Aliyun_mqtt.CMD_buff);
 
-        if (strstr((char *)Aliyun_mqtt.CMD_buff, DOWNLOAD_INFORMATION_SUB))
+        if (strstr((char *)Aliyun_mqtt.CMD_buff, esp8266_config.ota.device_report_progress_pub))
         {
-            if (sscanf((char *)Aliyun_mqtt.CMD_buff, "/ota/device/upgrade/k1644sbngGw/AT_MQTT{\"code\":\"1000\",\"data\":{\"size\":%d,\"streamId\":%d,\"sign\":\"%*32s\",\"dProtocol\":\"mqtt\",\"version\":\"%26s\",\"signMethod\":\"Md5\",\"streamFileId\":1,\"md5\":\"%*32s\"},\"id\":%*d,\"message\":\"success\"}", &Aliyun_mqtt.size, &Aliyun_mqtt.streamId, Aliyun_mqtt.OTA_tempver) == 3)
+            if (sscanf((char *)Aliyun_mqtt.CMD_buff, "%s{\"code\":\"1000\",\"data\":{\"size\":%d,\"streamId\":%d,\"sign\":\"%*32s\",\"dProtocol\":\"mqtt\",\"version\":\"%26s\",\"signMethod\":\"Md5\",\"streamFileId\":1,\"md5\":\"%*32s\"},\"id\":%*d,\"message\":\"success\"}",esp8266_config.ota.download_info_sub, &Aliyun_mqtt.size, &Aliyun_mqtt.streamId, Aliyun_mqtt.OTA_tempver) == 3)
             {
                 printf("OTA固件大小:%d\r\n", Aliyun_mqtt.size);
                 printf("OTA固件ID:%d\r\n", Aliyun_mqtt.streamId);
@@ -84,7 +76,7 @@ void OTA_Deal_MQTT_Data(uint8_t *data, uint16_t datalen)
                 printf("OTA固件信息解析错误\r\n");
             }
         }
-        if (strstr((char *)Aliyun_mqtt.CMD_buff, DEVICE_DOWNLOAD_FILE_REPLY))
+        if (strstr((char *)Aliyun_mqtt.CMD_buff, esp8266_config.ota.device_download_file_reply))
         {
             uint16_t temp[(Aliyun_mqtt.num - 1 + 1) / 2]; // +1 和 /2 是为了向上取整
             for (int i = 0; i < Aliyun_mqtt.num - 1; i += 2)
@@ -134,7 +126,7 @@ void OTA_Version(void)
 
     memset(temp, 0, 128);                                                                 // 清空缓冲区
     sprintf(temp, "{\"id\": \"1\",\"params\": {\"version\": \"%s\"}}", OTA_Info.OTA_ver); // 构建数据
-    MQTT_PublishDataQs1(UPLOAD_INFORMATION_PUB, temp);                                    // 发送数据到服务器
+    MQTT_PublishDataQs1(esp8266_config.ota.upload_info_pub, temp);                                    // 发送数据到服务器
 }
 /*-------------------------------------------------*/
 /*函数名：OTA下载数据                              */
@@ -150,8 +142,8 @@ void OTA_Download(int size, int offset)
     // 构建数据
     sprintf(temp, "{\"id\": \"1\",\"params\": {\"fileInfo\":{\"streamId\":%d,\"fileId\":1},\"fileBlock\":{\"size\":%d,\"offset\":%d}}}", Aliyun_mqtt.streamId, size, offset);
     printf("当前第%d/%d次\r\n", Aliyun_mqtt.num, Aliyun_mqtt.counter); // 串口输出数据
-    MQTT_PublishDataQs0(DEVICE_DOWNLOAD_FILE_REPLY, temp);             // 发送数据到服务器
-    HAL_Delay(300);                                                    // 延时，阿里云限速，不能发太快
+    MQTT_PublishDataQs0(esp8266_config.ota.device_download_file_reply, temp);             // 发送数据到服务器
+    uart_init.delay_ms(300);                                                    // 延时，阿里云限速，不能发太快
 }
 
 /*-------------------------------------------------*/
@@ -164,7 +156,7 @@ void MQTT_ConnectPack(void)
     Aliyun_mqtt.MessageID = 1;                                                                                   // 初始化报文标识符变量，从1开始利用
     Aliyun_mqtt.Fixed_len = 1;                                                                                   // 固定报头长度，暂定1
     Aliyun_mqtt.Variable_len = 10;                                                                               // 可变报头长度，10
-    Aliyun_mqtt.Payload_len = 2 + strlen(MQTT_CLIENT_ID) + 2 + strlen(MQTT_USER_NAME) + 2 + strlen(MQTT_PASSWD); // 计算负载长度
+    Aliyun_mqtt.Payload_len = 2 + strlen(esp8266_config.mqtt.client_id) + 2 + strlen(esp8266_config.mqtt.username) + 2 + strlen(esp8266_config.mqtt.password); // 计算负载长度
     Aliyun_mqtt.Remaining_len = Aliyun_mqtt.Variable_len + Aliyun_mqtt.Payload_len;                              // 计算剩余长度
 
     Aliyun_mqtt.Pack_buff[0] = 0x10; // CONNECT报文固定报头第1个字节，0x01
@@ -195,19 +187,19 @@ void MQTT_ConnectPack(void)
     Aliyun_mqtt.Pack_buff[Aliyun_mqtt.Fixed_len + 8] = 0x00; // CONNECT报文可变报头：0x00
     Aliyun_mqtt.Pack_buff[Aliyun_mqtt.Fixed_len + 9] = 0x64; // CONNECT报文可变报头：0x64
 
-    Aliyun_mqtt.Pack_buff[Aliyun_mqtt.Fixed_len + 10] = strlen(MQTT_CLIENT_ID) / 256;                   // 负载，MQTT_CLIENT_ID字符串长度表示高字节
-    Aliyun_mqtt.Pack_buff[Aliyun_mqtt.Fixed_len + 11] = strlen(MQTT_CLIENT_ID) % 256;                   // 负载，MQTT_CLIENT_ID字符串长度表示低字节
-    memcpy(&Aliyun_mqtt.Pack_buff[Aliyun_mqtt.Fixed_len + 12], MQTT_CLIENT_ID, strlen(MQTT_CLIENT_ID)); // 负载，拷贝MQTT_CLIENT_ID字符串
+    Aliyun_mqtt.Pack_buff[Aliyun_mqtt.Fixed_len + 10] = strlen(esp8266_config.mqtt.client_id) / 256;                   // 负载，MQTT_CLIENT_ID字符串长度表示高字节
+    Aliyun_mqtt.Pack_buff[Aliyun_mqtt.Fixed_len + 11] = strlen(esp8266_config.mqtt.client_id) % 256;                   // 负载，MQTT_CLIENT_ID字符串长度表示低字节
+    memcpy(&Aliyun_mqtt.Pack_buff[Aliyun_mqtt.Fixed_len + 12], esp8266_config.mqtt.client_id, strlen(esp8266_config.mqtt.client_id)); // 负载，拷贝MQTT_CLIENT_ID字符串
 
-    Aliyun_mqtt.Pack_buff[Aliyun_mqtt.Fixed_len + 12 + strlen(MQTT_CLIENT_ID)] = strlen(MQTT_USER_NAME) / 256;                   // 负载，MQTT_USER_NAME字符串长度表示高字节
-    Aliyun_mqtt.Pack_buff[Aliyun_mqtt.Fixed_len + 13 + strlen(MQTT_CLIENT_ID)] = strlen(MQTT_USER_NAME) % 256;                   // 负载，MQTT_USER_NAME字符串长度表示低字节
-    memcpy(&Aliyun_mqtt.Pack_buff[Aliyun_mqtt.Fixed_len + 14 + strlen(MQTT_CLIENT_ID)], MQTT_USER_NAME, strlen(MQTT_USER_NAME)); // 负载，拷贝MQTT_USER_NAME字符串
+    Aliyun_mqtt.Pack_buff[Aliyun_mqtt.Fixed_len + 12 + strlen(esp8266_config.mqtt.client_id)] = strlen(esp8266_config.mqtt.user_name) / 256;                   // 负载，MQTT_USER_NAME字符串长度表示高字节
+    Aliyun_mqtt.Pack_buff[Aliyun_mqtt.Fixed_len + 13 + strlen(esp8266_config.mqtt.client_id)] = strlen(esp8266_config.mqtt.user_name) % 256;                   // 负载，MQTT_USER_NAME字符串长度表示低字节
+    memcpy(&Aliyun_mqtt.Pack_buff[Aliyun_mqtt.Fixed_len + 14 + strlen(esp8266_config.mqtt.client_id)], esp8266_config.mqtt.user_name, strlen(esp8266_config.mqtt.user_name)); // 负载，拷贝MQTT_USER_NAME字符串
 
-    Aliyun_mqtt.Pack_buff[Aliyun_mqtt.Fixed_len + 14 + strlen(MQTT_CLIENT_ID) + strlen(MQTT_USER_NAME)] = strlen(MQTT_PASSWD) / 256;                // 负载，MQTT_PASSWD 字符串长度表示高字节
-    Aliyun_mqtt.Pack_buff[Aliyun_mqtt.Fixed_len + 15 + strlen(MQTT_CLIENT_ID) + strlen(MQTT_USER_NAME)] = strlen(MQTT_PASSWD) % 256;                // 负载，MQTT_PASSWD 字符串长度表示低字节
-    memcpy(&Aliyun_mqtt.Pack_buff[Aliyun_mqtt.Fixed_len + 16 + strlen(MQTT_CLIENT_ID) + strlen(MQTT_USER_NAME)], MQTT_PASSWD, strlen(MQTT_PASSWD)); // 负载，拷贝MQTT_PASSWD 字符串
+    Aliyun_mqtt.Pack_buff[Aliyun_mqtt.Fixed_len + 14 + strlen(esp8266_config.mqtt.client_id) + strlen(esp8266_config.mqtt.username)] = strlen(esp8266_config.mqtt.password) / 256;                // 负载，MQTT_PASSWD 字符串长度表示高字节
+    Aliyun_mqtt.Pack_buff[Aliyun_mqtt.Fixed_len + 15 + strlen(esp8266_config.mqtt.client_id) + strlen(esp8266_config.mqtt.username)] = strlen(esp8266_config.mqtt.password) % 256;                // 负载，MQTT_PASSWD 字符串长度表示低字节
+    memcpy(&Aliyun_mqtt.Pack_buff[Aliyun_mqtt.Fixed_len + 16 + strlen(esp8266_config.mqtt.client_id) + strlen(esp8266_config.mqtt.username)], esp8266_config.mqtt.password, strlen(esp8266_config.mqtt.password)); // 负载，拷贝MQTT_PASSWD 字符串
 
-    HAL_UART_Transmit(&huart2, Aliyun_mqtt.Pack_buff, Aliyun_mqtt.Fixed_len + Aliyun_mqtt.Variable_len + Aliyun_mqtt.Payload_len, 1000);
+   uart_init.uart_send(Aliyun_mqtt.Pack_buff, Aliyun_mqtt.Fixed_len + Aliyun_mqtt.Variable_len + Aliyun_mqtt.Payload_len);
 }
 
 /*-------------------------------------------------*/
@@ -248,7 +240,7 @@ void MQTT_SubcribPack(char *topic)
     memcpy(&Aliyun_mqtt.Pack_buff[Aliyun_mqtt.Fixed_len + 4], topic, strlen(topic)); // 负载，拷贝订阅的Topic字符串
 
     Aliyun_mqtt.Pack_buff[Aliyun_mqtt.Fixed_len + 4 + strlen(topic)] = 0;                                                                // 负载，订阅的Topic服务质量等级
-    HAL_UART_Transmit(&huart2, Aliyun_mqtt.Pack_buff, Aliyun_mqtt.Fixed_len + Aliyun_mqtt.Variable_len + Aliyun_mqtt.Payload_len, 1000); // 发送数据
+    uart_init.uart_send(Aliyun_mqtt.Pack_buff, Aliyun_mqtt.Fixed_len + Aliyun_mqtt.Variable_len + Aliyun_mqtt.Payload_len); // 发送数据
 }
 
 /*-------------------------------------------------*/
@@ -306,7 +298,7 @@ void MQTT_PublishDataQs0(char *topic, char *data)
     memcpy(&Aliyun_mqtt.Pack_buff[Aliyun_mqtt.Fixed_len + 2], topic, strlen(topic));               // 可变报头，拷贝发送数据的Topic字符串
     memcpy(&Aliyun_mqtt.Pack_buff[Aliyun_mqtt.Fixed_len + 2 + strlen(topic)], data, strlen(data)); // 负载，拷贝发送的数据
 
-    HAL_UART_Transmit(&huart2, Aliyun_mqtt.Pack_buff, Aliyun_mqtt.Fixed_len + Aliyun_mqtt.Variable_len + Aliyun_mqtt.Payload_len, 1000);
+    uart_init.uart_send(Aliyun_mqtt.Pack_buff, Aliyun_mqtt.Fixed_len + Aliyun_mqtt.Variable_len + Aliyun_mqtt.Payload_len);
 }
 
 /*-------------------------------------------------*/
@@ -348,5 +340,5 @@ void MQTT_PublishDataQs1(char *topic, char *data)
     Aliyun_mqtt.MessageID++;                                                                        // 报文标识符变量+1
 
     memcpy(&Aliyun_mqtt.Pack_buff[Aliyun_mqtt.Fixed_len + 4 + strlen(topic)], data, strlen(data)); // 负载，拷贝发送的数据
-    HAL_UART_Transmit(&huart2, Aliyun_mqtt.Pack_buff, Aliyun_mqtt.Fixed_len + Aliyun_mqtt.Variable_len + Aliyun_mqtt.Payload_len, 1000);
+    uart_init.uart_send(Aliyun_mqtt.Pack_buff, Aliyun_mqtt.Fixed_len + Aliyun_mqtt.Variable_len + Aliyun_mqtt.Payload_len);
 }

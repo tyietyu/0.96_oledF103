@@ -40,7 +40,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-uint32_t BootStaFlag;
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -115,7 +115,6 @@ int main(void)
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
   //OLED_Init();
-  ESP8266_init(3,1);
   ESP8266_demo();
   time2_start();
   // while (MPU6050_Init(&hi2c2) == 1) {};
@@ -177,6 +176,7 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 void ESP8266_demo(void)
 {
+  ESP8266_init(1,1);
 
 }
 

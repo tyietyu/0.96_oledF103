@@ -1,10 +1,7 @@
-#ifndef __IAP_H
-#define __IAP_H
+#ifndef __OTADRIVER_H
+#define __OTADRIVER_H
 
 #include "main.h"
-
-#define PACK_BUFF_SIZE  512
-#define CMD_BUFF_SIZE   512
 
 #define  CONNECT_OK         0x00000001        //置位表明CONNECT报文成功
 #define  OTA_EVENT          0x00000002        //置位表明OTA事件发生  
@@ -12,14 +9,15 @@
 
 #define OTA_PACK_ADDERS   0x08002000        //OTA固件起始地址
 
+#pragma pack(push, 4)
 typedef struct{
-	uint8_t   Pack_buff[PACK_BUFF_SIZE];     //报文数据缓冲区
+	uint8_t   Pack_buff[512];     //报文数据缓冲区
 	uint16_t  MessageID;          //报文标识符变量
 	uint16_t  Fixed_len;          //报文固定报头长度
 	uint16_t  Variable_len;       //报文可变报头长度
 	uint16_t  Payload_len;        //报文负载长度
 	uint16_t  Remaining_len;      //报文剩余长度
-	uint8_t   CMD_buff[CMD_BUFF_SIZE];      //提取的数据缓冲区
+	uint8_t   CMD_buff[512];      //提取的数据缓冲区
 	int size;                     //OTA下载固件大小
 	int streamId;                 //OTA下载固件ID编号
 	int counter;                  //OTA下载总共下载次数
@@ -33,10 +31,12 @@ typedef struct{
 	uint32_t Firelen[11];                     //W25Q64中不同块中程序固件的长度，0号成员固定对应W25Q64中编码0的块，用于OTA
 	uint8_t  OTA_ver[32];
 }OTA_InfoCB;  
+#pragma pack(pop)
+
 extern OTA_InfoCB  OTA_Info;      //外部变量声明
 extern MQTT_CB  Aliyun_mqtt;      //外部变量声明                            
 
-void processing_mqtt_data(uint8_t *data, uint16_t datalen);  //函数声明
+void OTA_Deal_MQTT_Data(uint8_t *data, uint16_t datalen);  //函数声明
 void OTA_Version(void);                           //函数声明
 void OTA_Download(int size, int offset);          //函数声明
 
@@ -45,8 +45,6 @@ void MQTT_SubcribPack(char *topic);                           //函数声明
 void MQTT_DealPublishData(uint8_t *data, uint16_t data_len);  //函数声明
 void MQTT_PublishDataQs0(char *topic, char *data);            //函数声明
 void MQTT_PublishDataQs1(char *topic, char *data);            //函数声明
-
-void OTA_Init(void);
 
 
 #endif
