@@ -8,22 +8,39 @@ esp8266_config_t esp8266_config = {
     .wifi = {
         .ssid = "XiaomiPro",
         .password = "123456789l"},
-    .device_info = {.product_key = "k1644sbngGw", .device_name = "AT_MQTT", .device_secret = "1038f2eead281b6e90427a69d9cd532b"},
-    .mqtt = {.username = "AT_MQTT&k1644sbngGw", .client_id = "k1644sbngGw.AT_MQTT|securemode=2\\,signmethod=hmacsha256\\,timestamp=1722604000001|", .password = "35d93f05a230fb364ac51438ed45f67c42d0c0fd4a2f792298297d106afdbad3", .broker_address = "k1644sbngGw.iot-as-mqtt.cn-shanghai.aliyuncs.com"},
-    .mqtt_topics = {.sub_topic = "/k1644sbngGw/AT_MQTT/user/get", .pub_topic = "/sys/k1644sbngGw/AT_MQTT/thing/event/property/post", .json_format = "{\"params\":{\"esp8266_adc_data\":%d,\"LED\":%d},\"version\":\"1.0.0\"}", .json_format_firmware = "{\"id\":\"0011\",\"params\":{\"version\":\"1.0.0\"}}", .device_attributes = "/sys/k1644sbngGw/AT_MQTT/thing/service/property/set"},
-    .ota = {.upload_info_pub = "/ota/device/inform/k1644sbngGw/AT_MQTT", .download_info_sub = "/ota/device/upgrade/k1644sbngGw/AT_MQTT", .device_active_info_pub = "/sys/k1644sbngGw/AT_MQTT/thing/ota/firmware/get", .device_report_progress_pub = "/ota/device/progress/k1644sbngGw/AT_MQTT", .device_download_file = "/sys/k1644sbngGw/AT_MQTT/thing/file/download_reply", .device_download_file_reply = "/sys/k1644sbngGw/AT_MQTT/thing/file/download"}};
+    .device_info = {
+        .product_key = "k1644sbngGw", 
+        .device_name = "AT_MQTT", 
+        .device_secret = "1038f2eead281b6e90427a69d9cd532b"},
+    .mqtt = {
+        .username = "AT_MQTT&k1644sbngGw", 
+        .client_id = "k1644sbngGw.AT_MQTT|securemode=2\\,signmethod=hmacsha256\\,timestamp=1722604000001|", 
+        .password = "35d93f05a230fb364ac51438ed45f67c42d0c0fd4a2f792298297d106afdbad3", 
+        .broker_address = "k1644sbngGw.iot-as-mqtt.cn-shanghai.aliyuncs.com"},
+    .mqtt_topics = {
+        .sub_topic = "/k1644sbngGw/AT_MQTT/user/get", 
+        .pub_topic = "/sys/k1644sbngGw/AT_MQTT/thing/event/property/post", 
+        .json_format = "{\"params\":{\"esp8266_adc_data\":%d,\"LED\":%d},\"version\":\"1.0.0\"}", 
+        .json_format_firmware = "{\"id\":\"0011\",\"params\":{\"version\":\"1.0.0\"}}", 
+        .device_attributes = "/sys/k1644sbngGw/AT_MQTT/thing/service/property/set"},
+    .ota = {
+        .upload_info_pub = "/ota/device/inform/k1644sbngGw/AT_MQTT", 
+        .download_info_sub = "/ota/device/upgrade/k1644sbngGw/AT_MQTT", 
+        .device_active_info_pub = "/sys/k1644sbngGw/AT_MQTT/thing/ota/firmware/get", 
+        .device_report_progress_pub = "/ota/device/progress/k1644sbngGw/AT_MQTT", 
+        .device_download_file = "/sys/k1644sbngGw/AT_MQTT/thing/file/download_reply", 
+        .device_download_file_reply = "/sys/k1644sbngGw/AT_MQTT/thing/file/download"}
+};
 
 uart_init_t uart_init = {
     .uart_port = &huart2,
     .delay_ms = HAL_Delay,
     .uart_send = hal_uart_send,
     .uart_receive = hal_uart_receive,
-    .uart_irq_callback = hal_uart_irq_callback,
     .esp8266_buffer.send_buff = {0},
     .esp8266_buffer.receive_buff = {0},
     .esp8266_buffer.receive_start = 0,
     .esp8266_buffer.receive_count = 0,
-    .esp8266_buffer.receive_finish = 0,
 };
 
 esp8266_init_t esp8266_init = {
@@ -35,10 +52,9 @@ esp8266_init_t esp8266_init = {
 
 void ESP8266_uart_rx_clear(uint16_t len)
 {
-    memset(uart_init.esp8266_buffer.receive_buff, 0x00, len);
+    memset((void *)uart_init.esp8266_buffer.receive_buff, 0x00, len);
     uart_init.esp8266_buffer.receive_count = 0;
     uart_init.esp8266_buffer.receive_start = 0;
-    uart_init.esp8266_buffer.receive_finish = 0;
 }
 
 void hal_uart_send(uint8_t *data, size_t length)
@@ -55,47 +71,38 @@ void hal_uart_receive(uint8_t *data, size_t length)
     HAL_UART_Receive_IT(&huart2, data, length);
 }
 
-void hal_uart_irq_callback(void)
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-    uint8_t receive_data = 0;
-    if (__HAL_UART_GET_FLAG(&huart2, UART_FLAG_RXNE) != RESET)
+    if( huart->Instance == USART2)
     {
+        uint8_t receive_data = 0;
         hal_uart_receive(&receive_data, sizeof(receive_data));
         uart_init.esp8266_buffer.receive_buff[uart_init.esp8266_buffer.receive_count++] = receive_data;
-        uart_init.esp8266_buffer.receive_start = 1;
-        uart_init.esp8266_buffer.receive_finish = 0;
+        if(receive_data == '\0')
+        {
+            uart_init.esp8266_buffer.receive_start = 1;
+            uart_init.esp8266_buffer.receive_count = 0;
+        }
     }
 }
 
 uint8_t ESP8266_send_at_cmd(unsigned char *cmd, unsigned char len, const char *ack)
 {
     uart_init.uart_send((unsigned char *)cmd, len);
-    for (unsigned int count = 0; count < 1000; count++)
+    if(uart_init.esp8266_buffer.receive_start==1)
     {
-        if (uart_init.esp8266_buffer.receive_start)
-            break;
-        uart_init.delay_ms(1);
+        if (strstr((const char *)uart_init.esp8266_buffer.receive_buff, ack))
+        {
+            ESP8266_uart_rx_clear(uart_init.esp8266_buffer.receive_count);
+            return ESP8266_EOK;
+        }
     }
-
-    if (uart_init.esp8266_buffer.receive_start == 0)
+    else
     {
+        printf("ESP8266_send_at_cmd error\r\n");
+        ESP8266_uart_rx_clear(uart_init.esp8266_buffer.receive_count);
         return ESP8266_ERROR;
     }
-
-    for (unsigned int count = 0; count < 500; count++)
-    {
-        uart_init.esp8266_buffer.receive_finish++;
-        uart_init.delay_ms(1);
-    }
-
-    if (strstr((const char *)uart_init.esp8266_buffer.receive_buff, ack))
-    {
-        ESP8266_uart_rx_clear(uart_init.esp8266_buffer.receive_count);
-        return ESP8266_EOK;
-    }
-
-    ESP8266_uart_rx_clear(uart_init.esp8266_buffer.receive_count);
-    return ESP8266_ERROR;
 }
 
 static uint8_t ESP8266_sw_reset(void)
