@@ -97,7 +97,7 @@ typedef struct
     esp8266_buffer_t esp8266_buffer;
 } uart_init_t;
 
-void hal_uart_irq_callback(void);
+void hal_uart2_receiver_handle(void);
 void hal_uart_send(uint8_t *data, size_t length);
 void hal_uart_receive(uint8_t *data, size_t length);
 

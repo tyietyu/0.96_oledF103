@@ -68,28 +68,25 @@ void hal_uart_receive(uint8_t *data, size_t length)
 {
     if (data == NULL || length == 0)
         return;
-    HAL_UART_Receive_IT(&huart2, data, length);
+    HAL_UART_Receive(&huart2, data, length, 1000);
 }
 
-void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+void hal_uart2_receiver_handle(void)
 {
-    if( huart->Instance == USART2)
+    uint8_t receive_data = 0;
+    hal_uart_receive(&receive_data, sizeof(receive_data));
+    uart_init.esp8266_buffer.receive_buff[uart_init.esp8266_buffer.receive_count++] = receive_data;
+    if(receive_data == '\0')
     {
-        uint8_t receive_data = 0;
-        hal_uart_receive(&receive_data, sizeof(receive_data));
-        uart_init.esp8266_buffer.receive_buff[uart_init.esp8266_buffer.receive_count++] = receive_data;
-        if(receive_data == '\0')
-        {
-            uart_init.esp8266_buffer.receive_start = 1;
-            uart_init.esp8266_buffer.receive_count = 0;
-        }
+        uart_init.esp8266_buffer.receive_start = 1;
+        uart_init.esp8266_buffer.receive_count = 0;
     }
 }
 
 uint8_t ESP8266_send_at_cmd(unsigned char *cmd, unsigned char len, const char *ack)
 {
     uart_init.uart_send((unsigned char *)cmd, len);
-    if(uart_init.esp8266_buffer.receive_start==1)
+    if(uart_init.esp8266_buffer.receive_start == 1)
     {
         if (strstr((const char *)uart_init.esp8266_buffer.receive_buff, ack))
         {
