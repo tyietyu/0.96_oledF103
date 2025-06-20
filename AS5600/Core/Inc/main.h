@@ -31,6 +31,8 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "delay.h"
+#include "tim.h"
 
 /* USER CODE END Includes */
 
@@ -57,6 +59,14 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define SCL2_Pin GPIO_PIN_10
+#define SCL2_GPIO_Port GPIOC
+#define SDA2_Pin GPIO_PIN_11
+#define SDA2_GPIO_Port GPIOC
+#define SCL1_Pin GPIO_PIN_5
+#define SCL1_GPIO_Port GPIOD
+#define SDA1_Pin GPIO_PIN_6
+#define SDA1_GPIO_Port GPIOD
 #define SCL_Pin GPIO_PIN_6
 #define SCL_GPIO_Port GPIOB
 #define SDA_Pin GPIO_PIN_7

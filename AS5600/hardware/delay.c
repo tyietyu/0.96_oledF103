@@ -48,10 +48,8 @@ uint8_t delay_init(void)
 {
     /* usr HCLK */
     HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
-    
     /* set fac */
     gs_fac_us = 72;
-    
     return 0;
 }
 

@@ -1,0 +1,23 @@
+{
+    "files.associations": {
+        "*.c": "c",
+        "as5600_app.h": "c",
+        "main.h": "c",
+        "delay.h": "c",
+        "type_traits": "c",
+        "typeinfo": "c",
+        "cmath": "c",
+        "cstdarg": "c",
+        "cstdint": "c",
+        "cstdio": "c",
+        "cstdlib": "c",
+        "cwchar": "c",
+        "cwctype": "c",
+        "exception": "c",
+        "limits": "c",
+        "hal_iic.h": "c",
+        "stdint.h": "c"
+    },
+    "C_Cpp.errorSquiggles": "disabled",
+    "C_Cpp.default.compilerPath": "c:\\MinGW\\bin\\gcc.exe"
+}

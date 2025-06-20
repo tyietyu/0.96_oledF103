@@ -35,6 +35,9 @@
  */
 
 #include "AS5600_driver.h"
+#include <stdarg.h>
+#include <stdio.h>
+#include <string.h>
 
 /**
  * @brief chip information definition

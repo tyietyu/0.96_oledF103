@@ -18,37 +18,23 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "AS5600_driver.h"
-#include "iic_hal.h"
-#include "delay.h"
+#include "AS5600_app.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-iic_bus_t AS5600_iic_bus = {
-  .IIC_SDA_PORT = GPIOB,
-  .IIC_SDA_PIN = GPIO_PIN_7,
-  .IIC_SCL_PORT = GPIOB,
-  .IIC_SCL_PIN = GPIO_PIN_6,
-};
 
-as5600_handle_t AS5600_handle = {
-  .iic_init 	= AS5600_IIC_Init,
-  .iic_deinit = AS5600_IIC_Deinit,
-  .iic_read 	= AS5600_IIC_Read,
-  .iic_write 	= AS5600_IIC_Write,
-  .delay_ms 	= delay_ms,
-  .debug_print = as5600_debug_print,
-};
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -102,23 +88,35 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_UART5_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  IICInit(&AS5600_iic_bus);
-  as5600_init(&AS5600_handle);
+	delay_init();
+  as5600_init_all();
+  delay_ms(10);
+  HAL_TIM_Base_Start_IT(&htim2);
+
   /* USER CODE END 2 */
-    uint16_t angle_raw=0;
-    float angle_deg=0.0f;;
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+
   while (1)
   {
-    /* USER CODE END WHILE */
-		
-    /* USER CODE BEGIN 3 */
-
-    as5600_read(&AS5600_handle, &angle_raw, &angle_deg);
-    as5600_debug_print("angle_raw: %d, angle_deg: %f\r\n", angle_raw, angle_deg);
-    delay_ms(1000);
+    for (int i = 0; i < AS5600_DEVICE_COUNT; i++) {
+      if (g_as5600_devices[i].angle_data.angle_flag) {
+          g_as5600_devices[i].angle_data.angle_flag = 0; 
+          as5600_update_angle_data((AS5600_Device_Index_t) i);
+          // 获取并打印数据
+          float rpm = as5600_get_rpm((AS5600_Device_Index_t)i);
+          int32_t turns = as5600_get_total_turns((AS5600_Device_Index_t)i);
+          float angle = as5600_get_relative_angle((AS5600_Device_Index_t)i);
+          
+          // 使用统一的打印函数
+          as5600_debug_print("Device[%d]: Angle=%.2f, RPM=%.2f, Turns=%ld\r\n", 
+                             i + 1, angle, rpm, turns);
+      }
+  }
+  HAL_Delay(200);
   }
   /* USER CODE END 3 */
 }

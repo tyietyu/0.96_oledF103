@@ -37,9 +37,9 @@
 #ifndef AS5600_DRIVER_H
 #define AS5600_DRIVER_H
 
-#include <stdio.h>
 #include <stdint.h>
-#include <string.h>
+#include <stdio.h>
+
 
 #ifdef __cplusplus
 extern "C"{
@@ -159,6 +159,7 @@ typedef enum
 /**
  * @brief as5600 handle structure definition
  */
+
 typedef struct as5600_handle_s
 {
     uint8_t (*iic_init)(void);                                                          /**< point to an iic_init function address */
