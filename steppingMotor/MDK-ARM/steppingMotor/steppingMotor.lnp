@@ -2,6 +2,7 @@
 "steppingmotor\startup_stm32f103xb.o"
 "steppingmotor\main.o"
 "steppingmotor\gpio.o"
+"steppingmotor\dma.o"
 "steppingmotor\tim.o"
 "steppingmotor\usart.o"
 "steppingmotor\stm32f1xx_it.o"

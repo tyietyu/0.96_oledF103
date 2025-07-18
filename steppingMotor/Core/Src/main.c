@@ -53,6 +53,8 @@ typedef struct
 
 /* USER CODE BEGIN PV */
 UART_RxData_t uart_rx_data;
+extern  DMA_HandleTypeDef hdma_usart1_rx;
+extern  DMA_HandleTypeDef hdma_usart1_tx;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
