@@ -72,8 +72,8 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
     uart_rx_data.recv_length = Size;
     uart_rx_data.flag = 1;
     // Restart DMA reception
-    HAL_UARTEx_ReceiveToIdle_DMA(&huart1, uart_rx_data.buffer, uart_rx_data.size);
-    __HAL_DMA_DISABLE_IT(&hdma_usart1_rx, DMA_IT_HT);
+    HAL_UARTEx_ReceiveToIdle_DMA(&huart1, uart_rx_data.buffer,RX_BUFFER_SIZE);
+    __HAL_DMA_ENABLE_IT(&hdma_usart1_rx,DMA_IT_TC);
   }
 }
 /* USER CODE END 0 */
@@ -110,9 +110,8 @@ int main(void)
   MX_TIM2_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-  uart_rx_data.size = 32;
-  HAL_UARTEx_ReceiveToIdle_DMA(&huart1, uart_rx_data.buffer, uart_rx_data.size);
-  __HAL_DMA_DISABLE_IT(&hdma_usart1_rx, DMA_IT_HT);
+  __HAL_DMA_ENABLE_IT(&hdma_usart1_rx,DMA_IT_TC);
+  HAL_UARTEx_ReceiveToIdle_DMA(&huart1, uart_rx_data.buffer,RX_BUFFER_SIZE);
 
   hal_steppingMotor_init();
   /* USER CODE END 2 */
