@@ -140,7 +140,7 @@
         <SetRegEntry>
           <Number>0</Number>
           <Key>CMSIS_AGDI</Key>
-          <Name>-X"#PW_HID_CMSIS-DAP" -U978B647F0F7623C6E3C67C10A009C3FF -O206 -S8 -C0 -P00000000 -N00("ARM CoreSight SW-DP") -D00(1BA01477) -L00(0) -TO65554 -TC10000000 -TT10000000 -TP20 -TDS8007 -TDT0 -TDC1F -TIEFFFFFFFF -TIP8 -FO15 -FD20000000 -FC5000 -FN1 -FF0STM32F10x_128.FLM -FS08000000 -FL020000 -FP0($$Device:STM32F103C8$Flash\STM32F10x_128.FLM)</Name>
+          <Name>-X"#PW_HID_CMSIS-DAP" -U978B647F0F7623C6E3C67C10A009C3FF -O238 -S9 -C0 -P00000000 -N00("") -D00(00000000) -L00(0) -TO65554 -TC10000000 -TT10000000 -TP20 -TDS8007 -TDT0 -TDC1F -TIEFFFFFFFF -TIP8 -FO15 -FD20000000 -FC5000 -FN1 -FF0STM32F10x_128.FLM -FS08000000 -FL020000 -FP0($$Device:STM32F103C8$Flash\STM32F10x_128.FLM)</Name>
         </SetRegEntry>
         <SetRegEntry>
           <Number>0</Number>
@@ -297,7 +297,7 @@
         <EnableFlashSeq>0</EnableFlashSeq>
         <EnableLog>0</EnableLog>
         <Protocol>2</Protocol>
-        <DbgClock>10000000</DbgClock>
+        <DbgClock>5000000</DbgClock>
       </DebugDescription>
     </TargetOption>
   </Target>
@@ -428,7 +428,7 @@
 
   <Group>
     <GroupName>Drivers/STM32F1xx_HAL_Driver</GroupName>
-    <tvExp>1</tvExp>
+    <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -671,18 +671,6 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\BSP\mpu6050.c</PathWithFileName>
-      <FilenameWithoutPath>mpu6050.c</FilenameWithoutPath>
-      <RteFlg>0</RteFlg>
-      <bShared>0</bShared>
-    </File>
-    <File>
-      <GroupNumber>5</GroupNumber>
-      <FileNumber>29</FileNumber>
-      <FileType>1</FileType>
-      <tvExp>0</tvExp>
-      <tvExpOptDlg>0</tvExpOptDlg>
-      <bDave2>0</bDave2>
       <PathWithFileName>..\BSP\WS2812B.c</PathWithFileName>
       <FilenameWithoutPath>WS2812B.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
@@ -690,7 +678,7 @@
     </File>
     <File>
       <GroupNumber>5</GroupNumber>
-      <FileNumber>30</FileNumber>
+      <FileNumber>29</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -702,7 +690,7 @@
     </File>
     <File>
       <GroupNumber>5</GroupNumber>
-      <FileNumber>31</FileNumber>
+      <FileNumber>30</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
@@ -714,13 +702,25 @@
     </File>
     <File>
       <GroupNumber>5</GroupNumber>
-      <FileNumber>32</FileNumber>
+      <FileNumber>31</FileNumber>
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
       <PathWithFileName>..\BSP\flash.c</PathWithFileName>
       <FilenameWithoutPath>flash.c</FilenameWithoutPath>
+      <RteFlg>0</RteFlg>
+      <bShared>0</bShared>
+    </File>
+    <File>
+      <GroupNumber>5</GroupNumber>
+      <FileNumber>32</FileNumber>
+      <FileType>1</FileType>
+      <tvExp>1</tvExp>
+      <tvExpOptDlg>0</tvExpOptDlg>
+      <bDave2>0</bDave2>
+      <PathWithFileName>..\BSP\ee.c</PathWithFileName>
+      <FilenameWithoutPath>ee.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>

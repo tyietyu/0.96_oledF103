@@ -23,7 +23,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "esp8266.h"
-#include "IAP.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/

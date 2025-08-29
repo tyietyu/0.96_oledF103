@@ -16,7 +16,7 @@
         <TargetCommonOption>
           <Device>STM32F103C8</Device>
           <Vendor>STMicroelectronics</Vendor>
-          <PackID>Keil.STM32F1xx_DFP.2.4.0</PackID>
+          <PackID>Keil.STM32F1xx_DFP.2.3.0</PackID>
           <PackURL>http://www.keil.com/pack/</PackURL>
           <Cpu>IRAM(0x20000000-0x20004FFF) IROM(0x8000000-0x800FFFF) CLOCK(8000000) CPUTYPE("Cortex-M3") TZ</Cpu>
           <FlashUtilSpec></FlashUtilSpec>
@@ -641,11 +641,6 @@
               <FilePath>..\BSP\OLED_Data.c</FilePath>
             </File>
             <File>
-              <FileName>mpu6050.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\BSP\mpu6050.c</FilePath>
-            </File>
-            <File>
               <FileName>WS2812B.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\BSP\WS2812B.c</FilePath>
@@ -664,6 +659,11 @@
               <FileName>flash.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\BSP\flash.c</FilePath>
+            </File>
+            <File>
+              <FileName>ee.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\ee.c</FilePath>
             </File>
           </Files>
         </Group>
