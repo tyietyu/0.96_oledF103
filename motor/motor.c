@@ -18,6 +18,42 @@ static volatile uint32_t ramp_step_counter = 0;
 
 static volatile uint16_t timer_ms_count = 0;
 static volatile uint32_t led_count = 0;
+
+/**
+ * @brief 根据方向和步进索引执行八拍序列中的一步。
+ * @param dir：旋转方向（DIR_CW 或 DIR_CCW）。
+ * @param step_index：序列中的当前步（0-7）。
+ */
+static void motor_execute_step(motor_dir_t dir, uint8_t step_index)
+{
+    if (dir == DIR_CW) 
+    {
+        switch (step_index) 
+        {
+            case 0: MOTOR_B2(0); MOTOR_A2(0); MOTOR_B1(0); MOTOR_A1(1); break;
+            case 1: MOTOR_B2(0); MOTOR_A2(0); MOTOR_B1(1); MOTOR_A1(1); break;
+            case 2: MOTOR_B2(0); MOTOR_A2(0); MOTOR_B1(1); MOTOR_A1(0); break;
+            case 3: MOTOR_B2(0); MOTOR_A2(1); MOTOR_B1(1); MOTOR_A1(0); break;
+            case 4: MOTOR_B2(0); MOTOR_A2(1); MOTOR_B1(0); MOTOR_A1(0); break;
+            case 5: MOTOR_B2(1); MOTOR_A2(1); MOTOR_B1(0); MOTOR_A1(0); break;
+            case 6: MOTOR_B2(1); MOTOR_A2(0); MOTOR_B1(0); MOTOR_A1(0); break;
+            case 7: MOTOR_B2(1); MOTOR_A2(0); MOTOR_B1(0); MOTOR_A1(1); break;
+        }
+    }else{ 
+        switch (step_index) 
+        {
+            case 0: MOTOR_B2(1); MOTOR_A2(0); MOTOR_B1(0); MOTOR_A1(1); break;
+            case 1: MOTOR_B2(1); MOTOR_A2(0); MOTOR_B1(0); MOTOR_A1(0); break;
+            case 2: MOTOR_B2(1); MOTOR_A2(1); MOTOR_B1(0); MOTOR_A1(0); break;
+            case 3: MOTOR_B2(0); MOTOR_A2(1); MOTOR_B1(0); MOTOR_A1(0); break;
+            case 4: MOTOR_B2(0); MOTOR_A2(1); MOTOR_B1(1); MOTOR_A1(0); break;
+            case 5: MOTOR_B2(0); MOTOR_A2(0); MOTOR_B1(1); MOTOR_A1(0); break;
+            case 6: MOTOR_B2(0); MOTOR_A2(0); MOTOR_B1(1); MOTOR_A1(1); break;
+            case 7: MOTOR_B2(0); MOTOR_A2(0); MOTOR_B1(0); MOTOR_A1(1); break;
+        }
+    }
+}
+
 /**
  * @brief  Initializes the motor and stops it.
  * @retval None
@@ -96,38 +132,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
         if (timer_ms_count >= current_step_delay_ms)
         {
             timer_ms_count = 0; 
-            // --- 1. Perform one motor step ---
-            if (current_motor_dir == DIR_CW) 
-            {
-                switch (motor_step_index) 
-                {
-                    case 0: MOTOR_B2(0); MOTOR_A2(0); MOTOR_B1(0); MOTOR_A1(1); break;
-                    case 1: MOTOR_B2(0); MOTOR_A2(0); MOTOR_B1(1); MOTOR_A1(1); break;
-                    case 2: MOTOR_B2(0); MOTOR_A2(0); MOTOR_B1(1); MOTOR_A1(0); break;
-                    case 3: MOTOR_B2(0); MOTOR_A2(1); MOTOR_B1(1); MOTOR_A1(0); break;
-                    case 4: MOTOR_B2(0); MOTOR_A2(1); MOTOR_B1(0); MOTOR_A1(0); break;
-                    case 5: MOTOR_B2(1); MOTOR_A2(1); MOTOR_B1(0); MOTOR_A1(0); break;
-                    case 6: MOTOR_B2(1); MOTOR_A2(0); MOTOR_B1(0); MOTOR_A1(0); break;
-                    case 7: MOTOR_B2(1); MOTOR_A2(0); MOTOR_B1(0); MOTOR_A1(1); break;
-                }
-            }
-            else // DIR_CCW
-            { 
-                switch (motor_step_index) 
-                {
-                    case 0: MOTOR_B2(1); MOTOR_A2(0); MOTOR_B1(0); MOTOR_A1(1); break;
-                    case 1: MOTOR_B2(1); MOTOR_A2(0); MOTOR_B1(0); MOTOR_A1(0); break;
-                    case 2: MOTOR_B2(1); MOTOR_A2(1); MOTOR_B1(0); MOTOR_A1(0); break;
-                    case 3: MOTOR_B2(0); MOTOR_A2(1); MOTOR_B1(0); MOTOR_A1(0); break;
-                    case 4: MOTOR_B2(0); MOTOR_A2(1); MOTOR_B1(1); MOTOR_A1(0); break;
-                    case 5: MOTOR_B2(0); MOTOR_A2(0); MOTOR_B1(1); MOTOR_A1(0); break;
-                    case 6: MOTOR_B2(0); MOTOR_A2(0); MOTOR_B1(1); MOTOR_A1(1); break;
-                    case 7: MOTOR_B2(0); MOTOR_A2(0); MOTOR_B1(0); MOTOR_A1(1); break;
-                }
-            }
+            motor_execute_step(current_motor_dir, motor_step_index);
             motor_step_index = (motor_step_index + 1) % 8;
 
-            // --- 2. Update motor state and speed based on the ramp logic ---
             switch (motor_state)
             {
                 case MOTOR_ACCELERATING:
