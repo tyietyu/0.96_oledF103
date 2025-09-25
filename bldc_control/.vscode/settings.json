@@ -4,7 +4,8 @@
     "as5600.h": "c",
     "main.h": "c",
     "foc_hal.h": "c",
-    "foc_test.h": "c"
+    "foc_test.h": "c",
+    "foc.h": "c"
   },
   "C_Cpp.errorSquiggles": "disabled"
 }

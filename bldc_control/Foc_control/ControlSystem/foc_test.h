@@ -7,8 +7,8 @@
  */
 #ifndef __FOC_TEST_H__
 #define __FOC_TEST_H__
-#include "../../Algorithm/lowpass_filter.h"
-#include "../../Algorithm/pid.h"
+#include "../Algorithm/lowpass_filter.h"
+#include "../Algorithm/pid.h"
 #include "foc.h"
 
 void Foc_TestOpenloopVelocity(FOC_T *hfoc, float target_velocity);
